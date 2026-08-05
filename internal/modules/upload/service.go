@@ -149,6 +149,19 @@ func (s *FileService) FindList(ctx context.Context, req *FileListRequest) (*List
 	return result, nil
 }
 
+// Detail 获取文件详情
+func (s *FileService) Detail(ctx context.Context, req *FileDetailRequest) (*UploadFile, error) {
+	filter := &FileFilter{Id: req.ID, StoreId: req.StoreId}
+	item, err := s.repo.FindOne(ctx, filter)
+	if err != nil {
+		if errors.Is(err, baserepo.ErrRecordNotFound) {
+			return nil, apperror.New(errcode.NotFound, apperror.WithMsg("文件不存在"))
+		}
+		return nil, apperror.Wrap(errcode.Internal, err, apperror.WithMsg("获取文件详情失败"))
+	}
+	return item, nil
+}
+
 // getUploadConfig 获取上传配置
 func (s *FileService) getUploadConfig(ctx context.Context, storeId uint32) (*UploadConfig, error) {
 	config := &UploadConfig{}

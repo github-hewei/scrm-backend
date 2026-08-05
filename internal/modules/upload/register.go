@@ -24,6 +24,7 @@ func RegisterAdmin(rg *gin.RouterGroup, db *gorm.DB, binder *bind.Binder, settin
 	rg.POST("/upload/group/delete", h.DeleteGroup)
 	rg.POST("/upload/file/list", h.ListFile)
 	rg.POST("/upload/file/upload", h.UploadFileAdmin)
+	rg.POST("/upload/file/detail", h.DetailFile)
 	rg.POST("/upload/file/delete", h.DeleteFile)
 }
 
@@ -32,6 +33,7 @@ func RegisterApi(rg *gin.RouterGroup, db *gorm.DB, binder *bind.Binder, settings
 	h := buildHandler(db, binder, settings)
 	rg.POST("/upload/file/list", h.ListFile)
 	rg.POST("/upload/file/upload", h.UploadFile)
+	rg.POST("/upload/file/detail", h.DetailFile)
 	rg.POST("/upload/file/delete", h.DeleteFile)
 }
 
@@ -44,5 +46,6 @@ func RegisterPlatform(rg *gin.RouterGroup, db *gorm.DB, binder *bind.Binder, set
 	rg.POST("/upload/group/delete", h.DeleteGroup)
 	rg.POST("/upload/file/list", h.ListFile)
 	rg.POST("/upload/file/upload", h.UploadFileAdmin)
+	rg.POST("/upload/file/detail", h.DetailFile)
 	rg.POST("/upload/file/delete", h.DeleteFile)
 }

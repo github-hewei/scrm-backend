@@ -20,6 +20,14 @@
 | 设置管理 | `/setting/default/update` | 更新默认设置 | 超管、运营 |
 | 设置管理 | `/setting/default/delete` | 删除默认设置 | 超管、运营 |
 | 设置管理 | `/setting/form-configs` | 获取设置表单配置 | 超管、运营 |
+| 上传分组管理 | `/upload/group/list` | 获取分组列表 | 超管、运营 |
+| 上传分组管理 | `/upload/group/create` | 创建分组 | 超管、运营 |
+| 上传分组管理 | `/upload/group/update` | 更新分组 | 超管、运营 |
+| 上传分组管理 | `/upload/group/delete` | 删除分组 | 超管、运营 |
+| 上传文件管理 | `/upload/file/list` | 获取文件列表 | 超管、运营 |
+| 上传文件管理 | `/upload/file/upload` | 上传文件 | 超管、运营 |
+| 上传文件管理 | `/upload/file/detail` | 获取文件详情 | 超管、运营 |
+| 上传文件管理 | `/upload/file/delete` | 删除文件 | 超管、运营 |
 | 企业管理 | `/rbac/store/list` | 企业列表 | 超管、运营 |
 | 企业管理 | `/rbac/store/create` | 创建企业 | 超管、运营 |
 | 企业管理 | `/rbac/store/update` | 更新企业 | 超管、运营 |

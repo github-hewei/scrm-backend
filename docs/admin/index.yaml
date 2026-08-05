@@ -102,6 +102,8 @@ paths:
     $ref: './paths/upload.yaml#/~1upload~1file~1upload'
   /upload/file/delete:
     $ref: './paths/upload.yaml#/~1upload~1file~1delete'
+  /upload/file/detail:
+    $ref: './paths/upload.yaml#/~1upload~1file~1detail'
 
   /region/tree:
     $ref: './paths/region.yaml#/~1region~1tree'

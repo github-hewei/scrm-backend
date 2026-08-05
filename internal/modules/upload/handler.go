@@ -151,3 +151,19 @@ func (h *Handler) DeleteFile(ctx *gin.Context) {
 	}
 	response.Success(ctx, "删除成功", nil)
 }
+
+// DetailFile 获取文件详情
+func (h *Handler) DetailFile(ctx *gin.Context) {
+	req := &FileDetailRequest{}
+	if err := h.binder.ShouldBindJSON(ctx, req); err != nil {
+		response.Error(ctx, err)
+		return
+	}
+	req.StoreId = ctxkeys.StoreID(ctx.Request.Context())
+	result, err := h.fileSvc.Detail(ctx.Request.Context(), req)
+	if err != nil {
+		response.Error(ctx, err)
+		return
+	}
+	response.Success(ctx, "请求成功", result)
+}

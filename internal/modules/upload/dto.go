@@ -47,6 +47,12 @@ type FileDeleteRequest struct {
 	StoreId uint32 `json:"store_id"`
 }
 
+// FileDetailRequest 文件详情请求参数
+type FileDetailRequest struct {
+	ID      uint32 `json:"id" validate:"required"`
+	StoreId uint32 `json:"store_id"`
+}
+
 // FileRequest 文件上传请求参数
 type FileRequest struct {
 	File       *multipart.FileHeader `json:"-"`

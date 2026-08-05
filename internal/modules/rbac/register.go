@@ -68,10 +68,7 @@ func RegisterAdmin(public, r *gin.RouterGroup, db *gorm.DB, binder *bind.Binder,
 
 // RegisterPlatform 注册平台端路由。不挂载 RBAC 权限中间件，由平台端的 RequireRole 中间件控制访问权限。
 func RegisterPlatform(r *gin.RouterGroup, db *gorm.DB, binder *bind.Binder, config Config, rdb *redis.Client) {
-	h, authMid := buildAll(db, binder, config, rdb, nil)
-
-	r.Use(middleware.JWTGuard(config.HmacSecret))
-	r.Use(authMid.LoadUser())
+	h, _ := buildAll(db, binder, config, rdb, nil)
 
 	r.POST("/rbac/menu/list", h.menuList)
 	r.POST("/rbac/menu/create", h.menuCreate)

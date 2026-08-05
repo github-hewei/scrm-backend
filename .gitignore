@@ -10,3 +10,4 @@
 .roo
 /data/*.sql.progress
 /logs
+/uploads

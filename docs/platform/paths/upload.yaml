@@ -199,7 +199,7 @@
     tags:
       - 上传文件管理
     summary: 上传文件
-    description: 上传文件到服务器（multipart/form-data格式）
+    description: 通过表单上传文件，支持单文件上传
     operationId: uploadFile
     security:
       - BearerAuth: []
@@ -218,13 +218,7 @@
                 description: 上传的文件
               group_id:
                 type: integer
-                description: 文件分组ID
-              store_id:
-                type: integer
-                description: 企业ID
-              uploader_id:
-                type: integer
-                description: 上传者用户ID
+                description: 分组ID
     responses:
       '200':
         description: 成功

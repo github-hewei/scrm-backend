@@ -98,6 +98,23 @@ paths:
   /setting/default/delete:
     $ref: './paths/setting.yaml#/~1setting~1default~1delete'
 
+  /upload/group/list:
+    $ref: './paths/upload.yaml#/~1upload~1group~1list'
+  /upload/group/create:
+    $ref: './paths/upload.yaml#/~1upload~1group~1create'
+  /upload/group/update:
+    $ref: './paths/upload.yaml#/~1upload~1group~1update'
+  /upload/group/delete:
+    $ref: './paths/upload.yaml#/~1upload~1group~1delete'
+  /upload/file/list:
+    $ref: './paths/upload.yaml#/~1upload~1file~1list'
+  /upload/file/upload:
+    $ref: './paths/upload.yaml#/~1upload~1file~1upload'
+  /upload/file/delete:
+    $ref: './paths/upload.yaml#/~1upload~1file~1delete'
+  /upload/file/detail:
+    $ref: './paths/upload.yaml#/~1upload~1file~1detail'
+
 components:
   securitySchemes:
     BearerAuth:
