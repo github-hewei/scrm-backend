@@ -78,3 +78,9 @@ type QiniuConfig struct {
 	Expires   uint   `json:"expires"`
 	IsEnabled bool   `json:"is_enabled"`
 }
+
+// SiteConfig 站点配置
+type SiteConfig struct {
+	SiteName string `json:"site_name"`
+	Domain   string `json:"domain"`
+}

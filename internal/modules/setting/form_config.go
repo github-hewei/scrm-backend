@@ -5,6 +5,7 @@ func FormConfigs() []FormGroup {
 	return []FormGroup{
 		{Key: "site", Label: "站点信息", Description: "系统站点基本配置", OnlyPlatform: true, Fields: []FormField{
 			{Key: "site_name", Label: "站点名称", Type: "text", Required: true},
+			{Key: "domain", Label: "站点域名", Type: "text", Required: true},
 		}},
 		{Key: "email", Label: "邮件服务", Description: "邮件服务器配置", OnlyPlatform: true, Fields: []FormField{
 			{Key: "host", Label: "SMTP服务器", Type: "text", Required: true},

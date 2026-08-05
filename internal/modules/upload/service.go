@@ -321,6 +321,13 @@ func (s *FileService) Upload(ctx context.Context, req *FileRequest) (*UploadFile
 	}
 	uploadFile.Domain = domain
 
+	if config.StorageType == "local" {
+		site := &SiteConfig{}
+		if err := s.settSvc.GetSettingValue(ctx, "site", req.StoreId, site); err == nil && site.Domain != "" {
+			uploadFile.Domain = strings.TrimRight(site.Domain, "/")
+		}
+	}
+
 	if err := s.repo.Create(ctx, uploadFile); err != nil {
 		return nil, apperror.Wrap(errcode.Internal, err, apperror.WithMsg("创建文件记录失败"))
 	}

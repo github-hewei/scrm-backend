@@ -1,6 +1,7 @@
 package platform
 
 import (
+	"net/http"
 	"zero-backend/internal/modules/captcha"
 	"zero-backend/internal/modules/platform/user"
 	"zero-backend/internal/modules/rbac"
@@ -46,5 +47,20 @@ func NewGin(
 	settingSvc := provider.NewSettingService(db)
 	upload.RegisterPlatform(protected, db, binder, settingSvc)
 
+	r.LoadHTMLGlob("./views/*.html")
+	r.Static("/assets", "./views/assets")
+	r.Static("/uploads", "./uploads")
+	r.GET("/favicon.ico", func(c *gin.Context) {
+		c.File("./views/favicon.ico")
+	})
+	r.GET("/logo.svg", func(c *gin.Context) {
+		c.File("./views/logo.svg")
+	})
+	r.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", nil)
+	})
+	r.NoRoute(func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", nil)
+	})
 	return r
 }
