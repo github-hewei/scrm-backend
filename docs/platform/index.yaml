@@ -89,8 +89,6 @@ paths:
   /rbac/user/reset-password:
     $ref: './paths/rbac-user.yaml#/~1rbac~1user~1reset-password'
 
-  /setting/qiniu-token:
-    $ref: './paths/setting.yaml#/~1setting~1qiniu-token'
   /setting/default/list:
     $ref: './paths/setting.yaml#/~1setting~1default~1list'
   /setting/default/create:

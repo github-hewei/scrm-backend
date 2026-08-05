@@ -28,6 +28,11 @@ func Init() {
 	if err := v.ReadInConfig(); err != nil {
 		log.Printf("[WARN] read config.yaml failed: %v\n", err)
 	}
+
+	// 将 env 覆盖后的值固化到 Viper 内部，解决 UnmarshalKey 不合并 env 的问题
+	for _, key := range v.AllKeys() {
+		v.Set(key, v.Get(key))
+	}
 }
 
 // UnmarshalKey 从配置中读取指定 key 到 target。

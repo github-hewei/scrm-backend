@@ -94,16 +94,6 @@ func (h *Handler) FormConfigs(c *gin.Context) {
 	response.Success(c, "请求成功", result)
 }
 
-// QiniuToken 获取七牛上传Token
-func (h *Handler) QiniuToken(c *gin.Context) {
-	result, err := h.svc.QiniuToken(c.Request.Context())
-	if err != nil {
-		response.Error(c, err)
-		return
-	}
-	response.Success(c, "请求成功", result)
-}
-
 // DefaultList 获取默认设置列表
 func (h *Handler) DefaultList(c *gin.Context) {
 	req := &DefaultListRequest{}

@@ -23,7 +23,6 @@ func RegisterAdmin(rg *gin.RouterGroup, db *gorm.DB, binder *bind.Binder) {
 	rg.POST("/setting/update", h.Update)
 	rg.POST("/setting/delete", h.Delete)
 	rg.POST("/setting/form-configs", h.FormConfigs)
-	rg.POST("/setting/qiniu-token", h.QiniuToken)
 }
 
 // RegisterPlatform 注册设置模块路由（平台端）。暴露系统级默认设置和工具接口。
@@ -34,11 +33,8 @@ func RegisterPlatform(rg *gin.RouterGroup, db *gorm.DB, binder *bind.Binder) {
 	rg.POST("/setting/default/update", h.DefaultUpdate)
 	rg.POST("/setting/default/delete", h.DefaultDelete)
 	rg.POST("/setting/form-configs", h.FormConfigs)
-	rg.POST("/setting/qiniu-token", h.QiniuToken)
 }
 
 // RegisterApi 注册设置模块路由（API端）
 func RegisterApi(rg *gin.RouterGroup, db *gorm.DB, binder *bind.Binder) {
-	h := buildHandler(db, binder)
-	rg.POST("/setting/qiniu-token", h.QiniuToken)
 }

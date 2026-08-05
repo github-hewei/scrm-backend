@@ -55,8 +55,6 @@ paths:
     $ref: './paths/setting.yaml#/~1setting~1delete'
   /setting/form-configs:
     $ref: './paths/setting.yaml#/~1setting~1form-configs'
-  /setting/qiniu-token:
-    $ref: './paths/setting.yaml#/~1setting~1qiniu-token'
 
   /article/category/list:
     $ref: './paths/article.yaml#/~1article~1category~1list'

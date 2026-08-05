@@ -93,13 +93,6 @@ type FormOption struct {
 	Value any    `json:"value"`
 }
 
-// QiniuTokenResponse 七牛上传token
-type QiniuTokenResponse struct {
-	Token     string `json:"token"`
-	Domain    string `json:"domain"`
-	UploadUrl string `json:"upload_url"`
-}
-
 // QiniuConfig 七牛云配置
 type QiniuConfig struct {
 	AccessKey string `json:"access_key"`

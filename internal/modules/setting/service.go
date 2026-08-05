@@ -8,8 +8,6 @@ import (
 	"github.com/241x/zero-kit/apperror"
 	"github.com/241x/zero-kit/baserepo"
 	"github.com/241x/zero-web/errcode"
-	"github.com/qiniu/go-sdk/v7/auth/qbox"
-	"github.com/qiniu/go-sdk/v7/storage"
 )
 
 // Service 设置服务
@@ -146,18 +144,6 @@ func (s *Service) FormConfigs(ctx context.Context, req *FormConfigsRequest) ([]F
 		return filtered, nil
 	}
 	return configs, nil
-}
-
-// QiniuToken 获取七牛上传凭证
-func (s *Service) QiniuToken(ctx context.Context) (*QiniuTokenResponse, error) {
-	qiniu := &QiniuConfig{}
-	if err := s.GetSettingValue(ctx, "qiniu", qiniu); err != nil {
-		return nil, err
-	}
-	putPolicy := storage.PutPolicy{Scope: qiniu.Bucket}
-	mac := qbox.NewMac(qiniu.AccessKey, qiniu.SecretKey)
-	upToken := putPolicy.UploadToken(mac)
-	return &QiniuTokenResponse{Token: upToken, Domain: qiniu.Domain, UploadUrl: "https://upload.qiniup.com"}, nil
 }
 
 // DefaultService 默认设置服务

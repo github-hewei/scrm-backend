@@ -55,13 +55,6 @@ type FileRequest struct {
 	UploaderId uint32                `json:"uploader_id"`
 }
 
-// QiniuTokenResponse 七牛上传token
-type QiniuTokenResponse struct {
-	Token     string `json:"token"`
-	Domain    string `json:"domain"`
-	UploadUrl string `json:"upload_url"`
-}
-
 // UploadConfig 上传配置
 type UploadConfig struct {
 	MaxSize      string   `json:"max_size"`

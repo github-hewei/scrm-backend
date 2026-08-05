@@ -4,7 +4,7 @@ go 1.26.4
 
 require (
 	github.com/241x/zero-kit v1.7.3
-	github.com/241x/zero-web v0.0.9
+	github.com/241x/zero-web v1.0.0
 	github.com/gin-gonic/gin v1.12.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
@@ -14,7 +14,6 @@ require (
 	github.com/redis/go-redis/v9 v9.20.0
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
-	github.com/stretchr/testify v1.11.1
 	github.com/wenlng/go-captcha-assets v1.0.7
 	github.com/wenlng/go-captcha/v2 v2.0.5
 	go.mongodb.org/mongo-driver v1.17.9
@@ -31,7 +30,6 @@ require (
 	github.com/bytedance/sonic/loader v0.5.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.13 // indirect
 	github.com/gammazero/toposort v0.1.1 // indirect
@@ -58,7 +56,6 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
-	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/quic-go/quic-go v0.59.0 // indirect
 	github.com/rs/zerolog v1.35.1 // indirect
@@ -86,7 +83,6 @@ require (
 	golang.org/x/text v0.37.0 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/mysql v1.6.0 // indirect
 	modernc.org/fileutil v1.0.0 // indirect
 )
