@@ -21,9 +21,7 @@ func (f *GroupFilter) Apply(db *gorm.DB) *gorm.DB {
 	if f.Id != 0 {
 		db = db.Where("id = ?", f.Id)
 	}
-	if f.StoreId != 0 {
-		db = db.Where("store_id = ?", f.StoreId)
-	}
+	db = db.Where("store_id = ?", f.StoreId)
 	if f.Name != "" {
 		db = db.Where("name = ?", f.Name)
 	}
@@ -57,9 +55,7 @@ func (f *FileFilter) Apply(db *gorm.DB) *gorm.DB {
 	if f.Id != 0 {
 		db = db.Where("id = ?", f.Id)
 	}
-	if f.StoreId != 0 {
-		db = db.Where("store_id = ?", f.StoreId)
-	}
+	db = db.Where("store_id = ?", f.StoreId)
 	if f.GroupId != "" && f.GroupId != "all" {
 		db = db.Where("group_id = ?", f.GroupId)
 	}

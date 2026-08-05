@@ -5,6 +5,7 @@ import (
 	"zero-backend/internal/modules/platform/user"
 	"zero-backend/internal/modules/rbac"
 	"zero-backend/internal/modules/setting"
+	"zero-backend/internal/modules/upload"
 	"zero-backend/internal/provider"
 
 	"github.com/241x/zero-kit/bind"
@@ -41,6 +42,9 @@ func NewGin(
 	cfg := rbac.MustLoadPlatformConfig()
 	rbac.RegisterPlatform(protected, db, binder, cfg, rdb)
 	setting.RegisterPlatform(protected, db, binder)
+
+	settingSvc := provider.NewSettingService(db)
+	upload.RegisterPlatform(protected, db, binder, settingSvc)
 
 	return r
 }

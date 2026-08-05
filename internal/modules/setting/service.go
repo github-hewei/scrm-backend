@@ -105,30 +105,42 @@ func (s *Service) checkSettingKey(ctx context.Context, key string, storeId uint3
 	return apperror.New(errcode.Conflict, apperror.WithMsg("设置key已存在"))
 }
 
-// GetSettingValue 获取并解析设置项
-func (s *Service) GetSettingValue(ctx context.Context, key string, out any) error {
-	filter := Filter{SettingKey: key}
-	setting, err := s.repo.FindOne(ctx, filter)
-	var settingValues string
+// GetSettingValue 获取并解析设置项。storeId=0 查平台默认配置，!=0 先查租户配置后回退默认。
+func (s *Service) GetSettingValue(ctx context.Context, key string, storeId uint32, out any) error {
+	values, err := s.getSettingValues(ctx, key, storeId)
 	if err != nil {
-		if !errors.Is(err, baserepo.ErrRecordNotFound) {
-			return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("获取设置项失败"))
-		}
-		defaultSetting, err := s.defaultRepo.FindOne(ctx, &DefaultFilter{SettingKey: key}, baserepo.WithScopes(nil))
-		if err != nil {
-			if errors.Is(err, baserepo.ErrRecordNotFound) {
-				return apperror.New(errcode.NotFound, apperror.WithMsg("设置项不存在"))
-			}
-			return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("获取设置项失败"))
-		}
-		settingValues = defaultSetting.SettingValues
-	} else {
-		settingValues = setting.SettingValues
+		return err
 	}
-	if err := json.Unmarshal([]byte(settingValues), out); err != nil {
+	if err := json.Unmarshal([]byte(values), out); err != nil {
 		return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("解析设置项失败"))
 	}
 	return nil
+}
+
+func (s *Service) getSettingValues(ctx context.Context, key string, storeId uint32) (string, error) {
+	if storeId == 0 {
+		return s.getDefaultSettingValue(ctx, key)
+	}
+
+	setting, err := s.repo.FindByKeyAndStore(ctx, key, storeId)
+	if err == nil {
+		return setting.SettingValues, nil
+	}
+	if !errors.Is(err, baserepo.ErrRecordNotFound) {
+		return "", apperror.Wrap(errcode.Internal, err, apperror.WithMsg("获取设置项失败"))
+	}
+	return s.getDefaultSettingValue(ctx, key)
+}
+
+func (s *Service) getDefaultSettingValue(ctx context.Context, key string) (string, error) {
+	defaultSetting, err := s.defaultRepo.FindOne(ctx, &DefaultFilter{SettingKey: key}, baserepo.WithScopes(nil))
+	if err != nil {
+		if errors.Is(err, baserepo.ErrRecordNotFound) {
+			return "", apperror.New(errcode.NotFound, apperror.WithMsg("设置项不存在"))
+		}
+		return "", apperror.Wrap(errcode.Internal, err, apperror.WithMsg("获取设置项失败"))
+	}
+	return defaultSetting.SettingValues, nil
 }
 
 // FormConfigs 获取表单配置

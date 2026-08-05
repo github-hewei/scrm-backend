@@ -34,3 +34,15 @@ func RegisterApi(rg *gin.RouterGroup, db *gorm.DB, binder *bind.Binder, settings
 	rg.POST("/upload/file/upload", h.UploadFile)
 	rg.POST("/upload/file/delete", h.DeleteFile)
 }
+
+// RegisterPlatform 注册上传模块路由（平台端）
+func RegisterPlatform(rg *gin.RouterGroup, db *gorm.DB, binder *bind.Binder, settings SettingProvider) {
+	h := buildHandler(db, binder, settings)
+	rg.POST("/upload/group/list", h.ListGroup)
+	rg.POST("/upload/group/create", h.CreateGroup)
+	rg.POST("/upload/group/update", h.UpdateGroup)
+	rg.POST("/upload/group/delete", h.DeleteGroup)
+	rg.POST("/upload/file/list", h.ListFile)
+	rg.POST("/upload/file/upload", h.UploadFileAdmin)
+	rg.POST("/upload/file/delete", h.DeleteFile)
+}

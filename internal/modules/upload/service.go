@@ -23,7 +23,7 @@ import (
 
 // SettingProvider 设置值读取接口，由宿主项目注入实现。
 type SettingProvider interface {
-	GetSettingValue(ctx context.Context, key string, target any) error
+	GetSettingValue(ctx context.Context, key string, storeId uint32, target any) error
 }
 
 // GroupService 文件分组服务
@@ -150,9 +150,9 @@ func (s *FileService) FindList(ctx context.Context, req *FileListRequest) (*List
 }
 
 // getUploadConfig 获取上传配置
-func (s *FileService) getUploadConfig(ctx context.Context) (*UploadConfig, error) {
+func (s *FileService) getUploadConfig(ctx context.Context, storeId uint32) (*UploadConfig, error) {
 	config := &UploadConfig{}
-	if err := s.settSvc.GetSettingValue(ctx, "upload", config); err != nil {
+	if err := s.settSvc.GetSettingValue(ctx, "upload", storeId, config); err != nil {
 		return nil, err
 	}
 	return config, nil
@@ -231,7 +231,7 @@ func (s *FileService) generateFilePath(file *multipart.FileHeader) (string, erro
 
 // Upload 上传文件
 func (s *FileService) Upload(ctx context.Context, req *FileRequest) (*UploadFile, error) {
-	config, err := s.getUploadConfig(ctx)
+	config, err := s.getUploadConfig(ctx, req.StoreId)
 	if err != nil {
 		return nil, apperror.Wrap(errcode.Internal, err, apperror.WithMsg("获取上传配置失败"))
 	}
@@ -288,7 +288,7 @@ func (s *FileService) Upload(ctx context.Context, req *FileRequest) (*UploadFile
 
 	if config.StorageType == "qiniu" {
 		qiniu := &QiniuConfig{}
-		if err := s.settSvc.GetSettingValue(ctx, "qiniu", qiniu); err != nil {
+		if err := s.settSvc.GetSettingValue(ctx, "qiniu", req.StoreId, qiniu); err != nil {
 			return nil, err
 		}
 		if !qiniu.IsEnabled {

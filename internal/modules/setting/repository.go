@@ -1,6 +1,8 @@
 package setting
 
 import (
+	"context"
+
 	"github.com/241x/zero-kit/baserepo"
 	"gorm.io/gorm"
 )
@@ -37,6 +39,16 @@ type Repository struct {
 // NewRepository 创建数据仓库
 func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{BaseRepository: baserepo.NewBaseRepository[Setting](db)}
+}
+
+// FindByKeyAndStore 按key和store_id精确查询，storeId=0时也会过滤
+func (r *Repository) FindByKeyAndStore(ctx context.Context, key string, storeId uint32) (*Setting, error) {
+	var setting Setting
+	err := r.Db.WithContext(ctx).Where("setting_key = ? AND store_id = ?", key, storeId).First(&setting).Error
+	if err != nil {
+		return nil, err
+	}
+	return &setting, nil
 }
 
 // DefaultFilter 默认过滤条件
