@@ -29,7 +29,7 @@ func buildAll(db *gorm.DB, binder *bind.Binder, config Config, rdb *redis.Client
 	menuServ := NewRbacMenuService(menuRepo, menuApiRepo, db)
 	apiServ := NewRbacApiService(apiRepo)
 	roleServ := NewRbacRoleService(roleRepo, roleMenuRepo, db)
-	userServ := NewRbacUserService(db, userRepo, userRoleRepo)
+	userServ := NewRbacUserService(db, userRepo, userRoleRepo, roleRepo)
 	storeServ := NewRbacStoreService(storeRepo)
 
 	h := newHandler(binder, authServ, config, menuServ, apiServ, roleServ, userServ, storeServ, authMid)

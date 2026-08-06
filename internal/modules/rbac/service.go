@@ -16,11 +16,12 @@ type RbacUserService struct {
 	db           *gorm.DB
 	repo         *RbacUserRepository
 	userRoleRepo *RbacUserRoleRepository
+	roleRepo     *RbacRoleRepository
 }
 
 // NewRbacUserService 创建用户服务
-func NewRbacUserService(db *gorm.DB, repo *RbacUserRepository, userRoleRepo *RbacUserRoleRepository) *RbacUserService {
-	return &RbacUserService{db: db, repo: repo, userRoleRepo: userRoleRepo}
+func NewRbacUserService(db *gorm.DB, repo *RbacUserRepository, userRoleRepo *RbacUserRoleRepository, roleRepo *RbacRoleRepository) *RbacUserService {
+	return &RbacUserService{db: db, repo: repo, userRoleRepo: userRoleRepo, roleRepo: roleRepo}
 }
 
 // FindList 获取用户列表
@@ -62,6 +63,9 @@ func (s *RbacUserService) FindList(ctx context.Context, req *RbacUserListRequest
 
 // Create 创建用户
 func (s *RbacUserService) Create(ctx context.Context, req *RbacUserCreateRequest) error {
+	if req.IsSuper == 1 && req.StoreId == 0 {
+		return apperror.New(errcode.InvalidInput, apperror.WithMsg("创建超管用户必须指定所属企业"))
+	}
 	if err := s.checkUsername(ctx, req.Username, req.StoreId); err != nil {
 		return err
 	}
@@ -149,6 +153,22 @@ func (s *RbacUserService) SetRoles(ctx context.Context, req *RbacUserRoleSetRequ
 		}
 		if user.StoreId != req.StoreId {
 			return apperror.New(errcode.NotFound, apperror.WithMsg("用户不存在"))
+		}
+
+		for _, roleID := range req.RoleIDs {
+			role, err := s.roleRepo.FindOne(ctx, roleID, baserepo.WithDB[*baserepo.QueryConfig](tx), baserepo.WithScopes(nil))
+			if err != nil {
+				if errors.Is(err, baserepo.ErrRecordNotFound) {
+					return apperror.New(errcode.NotFound, apperror.WithMsg("角色不存在"))
+				}
+				return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("设置用户角色失败"))
+			}
+			if role.StoreId != user.StoreId {
+				return apperror.New(errcode.Forbidden, apperror.WithMsg("角色不属于当前企业"))
+			}
+			if role.IsSuper == 1 && user.IsSuper != 1 {
+				return apperror.New(errcode.Forbidden, apperror.WithMsg("普通用户不能绑定超管角色"))
+			}
 		}
 
 		filter := &RbacUserRoleFilterField{UserId: user.ID}
