@@ -100,6 +100,7 @@ type RbacRole struct {
 	RoleName  string `json:"role_name" gorm:"size:50;not null;default:'';comment:角色名称"`
 	ParentId  uint32 `json:"parent_id" gorm:"not null;default:0;comment:父级角色ID"`
 	Sort      uint32 `json:"sort" gorm:"not null;default:100;comment:排序 ( 数字越小越靠前 ) "`
+	IsSuper   int8   `json:"is_super" gorm:"type:tinyint;not null;default:0;comment:是否为超级管理员角色"`
 	StoreId   uint32 `json:"store_id" gorm:"not null;default:0;comment:企业ID;index:store_id"`
 	CreatedAt int64  `json:"created_at" gorm:"not null;comment:创建时间;autoCreateTime"`
 	UpdatedAt int64  `json:"updated_at" gorm:"not null;comment:更新时间;autoUpdateTime"`
@@ -167,7 +168,7 @@ type RbacUser struct {
 	Username  string `json:"username" gorm:"size:255;not null;default:'';comment:用户名"`
 	Password  string `json:"-" gorm:"size:255;not null;default:'';comment:登录密码"`
 	RealName  string `json:"real_name" gorm:"size:255;not null;default:'';comment:姓名"`
-	IsSuper   int8   `json:"is_super" gorm:"type:tinyint;not null;default:1;comment:是否为超级管理员"`
+	IsSuper   int8   `json:"is_super" gorm:"type:tinyint;not null;default:0;comment:是否为超级管理员"`
 	Sort      uint32 `json:"sort" gorm:"not null;default:100;comment:排序 ( 数字越小越靠前 ) "`
 	StoreId   uint32 `json:"store_id" gorm:"not null;default:0;comment:企业ID;index:store_id"`
 	CreatedAt int64  `json:"created_at" gorm:"not null;comment:创建时间;autoCreateTime"`

@@ -90,7 +90,7 @@ func RegisterPlatform(r *gin.RouterGroup, db *gorm.DB, binder *bind.Binder, conf
 	r.POST("/rbac/store/recycle", h.storeRecycle)
 	r.POST("/rbac/store/restore", h.storeRestore)
 
-	r.POST("/rbac/role/list", h.roleList)
+	r.POST("/rbac/role/list", h.platformRoleList)
 	r.POST("/rbac/role/create", h.roleCreate)
 	r.POST("/rbac/role/update", h.roleUpdate)
 	r.POST("/rbac/role/delete", h.roleDelete)

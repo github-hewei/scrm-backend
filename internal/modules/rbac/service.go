@@ -31,6 +31,7 @@ func (s *RbacUserService) FindList(ctx context.Context, req *RbacUserListRequest
 		Username: req.Username,
 		RealName: req.RealName,
 		StoreId:  req.StoreId,
+		IsSuper:  req.IsSuper,
 	}
 
 	pagination := baserepo.NewPagination(req.Page, req.Limit)
@@ -487,6 +488,7 @@ func (s *RbacRoleService) FindTreeList(ctx context.Context, req *RbacRoleListReq
 	filter := &RbacRoleFilterField{
 		StoreId:  req.StoreId,
 		RoleName: req.RoleName,
+		IsSuper:  req.IsSuper,
 	}
 	list, err := s.repo.FindAll(ctx, filter, nil, nil,
 		baserepo.WithScopes(nil),
@@ -505,10 +507,32 @@ func (s *RbacRoleService) FindTreeList(ctx context.Context, req *RbacRoleListReq
 	return list, nil
 }
 
+// FindList 获取角色平铺列表(平台端跨企业视图使用，不构建树形结构)
+func (s *RbacRoleService) FindList(ctx context.Context, req *RbacRoleListRequest) ([]*RbacRole, error) {
+	filter := &RbacRoleFilterField{
+		StoreId:  req.StoreId,
+		RoleName: req.RoleName,
+		IsSuper:  req.IsSuper,
+	}
+	list, err := s.repo.FindAll(ctx, filter, nil, nil,
+		baserepo.WithScopes(nil),
+		baserepo.WithPreloads("RbacRoleMenu.RbacMenu"),
+	)
+	if err != nil {
+		return nil, apperror.Wrap(errcode.Internal, err, apperror.WithMsg("获取角色列表失败"))
+	}
+	return list, nil
+}
+
 // Create 创建角色
 func (s *RbacRoleService) Create(ctx context.Context, req *RbacRoleCreateRequest) error {
 	if err := s.checkName(ctx, req.RoleName, req.StoreId); err != nil {
 		return err
+	}
+	if req.IsSuper == 1 {
+		if err := s.checkSuperUnique(ctx, req.StoreId, 0); err != nil {
+			return err
+		}
 	}
 	if req.ParentId > 0 {
 		if err := s.checkParent(ctx, req.ParentId, req.StoreId); err != nil {
@@ -520,6 +544,7 @@ func (s *RbacRoleService) Create(ctx context.Context, req *RbacRoleCreateRequest
 		ParentId: req.ParentId,
 		Sort:     req.Sort,
 		StoreId:  req.StoreId,
+		IsSuper:  req.IsSuper,
 	}
 	if err := s.repo.Create(ctx, item); err != nil {
 		return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("创建角色失败"))
@@ -544,12 +569,18 @@ func (s *RbacRoleService) Update(ctx context.Context, req *RbacRoleUpdateRequest
 			return err
 		}
 	}
+	if req.IsSuper == 1 {
+		if err := s.checkSuperUnique(ctx, req.StoreId, req.ID); err != nil {
+			return err
+		}
+	}
 
 	updateData := map[string]any{
 		"role_name": req.RoleName,
 		"parent_id": req.ParentId,
 		"sort":      req.Sort,
 		"store_id":  req.StoreId,
+		"is_super":  req.IsSuper,
 	}
 	if err := s.repo.Updates(ctx, item, updateData); err != nil {
 		return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("更新角色失败"))
@@ -647,6 +678,18 @@ func (s *RbacRoleService) checkName(ctx context.Context, name string, StoreId ui
 		return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("检查角色名称失败"))
 	}
 	return apperror.New(errcode.Conflict, apperror.WithMsg("角色名已存在"))
+}
+
+// checkSuperUnique 校验同一企业下超管角色唯一
+func (s *RbacRoleService) checkSuperUnique(ctx context.Context, storeId uint32, excludeID uint32) error {
+	superRole, err := s.repo.FindSuper(ctx, storeId)
+	if err != nil {
+		return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("检查超管角色失败"))
+	}
+	if superRole.ID != 0 && superRole.ID != excludeID {
+		return apperror.New(errcode.Conflict, apperror.WithMsg("该企业已存在超管角色"))
+	}
+	return nil
 }
 
 // checkParent 检查父级角色

@@ -52,7 +52,7 @@ CREATE TABLE `gaz_rbac_user` (
   `username` varchar(255) NOT NULL DEFAULT '' COMMENT '用户名',
   `password` varchar(255) NOT NULL DEFAULT '' COMMENT '登录密码',
   `real_name` varchar(255) NOT NULL DEFAULT '' COMMENT '姓名',
-  `is_super` tinyint(3) unsigned NOT NULL DEFAULT '1' COMMENT '是否为超级管理员',
+  `is_super` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT '是否为超级管理员',
   `sort` int(11) unsigned NOT NULL DEFAULT '100' COMMENT '排序(数字越小越靠前)',
   `store_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '企业ID',
   `created_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间',
@@ -301,3 +301,8 @@ CREATE TABLE `gaz_platform_user` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARSET=utf8mb4 COMMENT='平台管理员表';
+
+-- [CHECK POINT] --
+
+ALTER TABLE `gaz_rbac_role`
+ADD COLUMN `is_super` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT '是否为超级管理员角色';

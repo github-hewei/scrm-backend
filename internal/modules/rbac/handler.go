@@ -358,8 +358,27 @@ func (h *handler) roleList(ctx *gin.Context) {
 	}
 	if sid := storeID(ctx); sid != 0 {
 		req.StoreId = sid
+		req.IsSuper = 0
+	} else {
+		req.IsSuper = 1
 	}
 	result, err := h.roleServ.FindTreeList(ctx.Request.Context(), req)
+	if err != nil {
+		response.Error(ctx, err)
+		return
+	}
+	response.Success(ctx, "请求成功", result)
+}
+
+// platformRoleList 平台端获取角色列表(平铺结构，仅超管角色，可按企业过滤)
+func (h *handler) platformRoleList(ctx *gin.Context) {
+	req := &RbacRoleListRequest{}
+	if err := h.binder.ShouldBindJSON(ctx, req); err != nil {
+		response.Error(ctx, err)
+		return
+	}
+	req.IsSuper = 1
+	result, err := h.roleServ.FindList(ctx.Request.Context(), req)
 	if err != nil {
 		response.Error(ctx, err)
 		return
@@ -376,6 +395,9 @@ func (h *handler) roleCreate(ctx *gin.Context) {
 	}
 	if sid := storeID(ctx); sid != 0 {
 		req.StoreId = sid
+		req.IsSuper = 0
+	} else {
+		req.IsSuper = 1
 	}
 	if err := h.roleServ.Create(ctx.Request.Context(), req); err != nil {
 		response.Error(ctx, err)
@@ -393,6 +415,9 @@ func (h *handler) roleUpdate(ctx *gin.Context) {
 	}
 	if sid := storeID(ctx); sid != 0 {
 		req.StoreId = sid
+		req.IsSuper = 0
+	} else {
+		req.IsSuper = 1
 	}
 	if err := h.roleServ.Update(ctx.Request.Context(), req); err != nil {
 		response.Error(ctx, err)
@@ -444,6 +469,9 @@ func (h *handler) userList(ctx *gin.Context) {
 	}
 	if sid := storeID(ctx); sid != 0 {
 		req.StoreId = sid
+		req.IsSuper = 0
+	} else {
+		req.IsSuper = 1
 	}
 	result, err := h.userServ.FindList(ctx.Request.Context(), req)
 	if err != nil {
@@ -462,6 +490,9 @@ func (h *handler) userCreate(ctx *gin.Context) {
 	}
 	if sid := storeID(ctx); sid != 0 {
 		req.StoreId = sid
+		req.IsSuper = 0
+	} else {
+		req.IsSuper = 1
 	}
 	if err := h.userServ.Create(ctx.Request.Context(), req); err != nil {
 		response.Error(ctx, err)
@@ -479,6 +510,9 @@ func (h *handler) userUpdate(ctx *gin.Context) {
 	}
 	if sid := storeID(ctx); sid != 0 {
 		req.StoreId = sid
+		req.IsSuper = 0
+	} else {
+		req.IsSuper = 1
 	}
 	if err := h.userServ.Update(ctx.Request.Context(), req); err != nil {
 		response.Error(ctx, err)

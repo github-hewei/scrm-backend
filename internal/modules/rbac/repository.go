@@ -14,6 +14,7 @@ type RbacUserFilterField struct {
 	Username string
 	RealName string
 	StoreId  uint32
+	IsSuper  int8
 }
 
 // Apply 应用过滤条件
@@ -29,6 +30,9 @@ func (f *RbacUserFilterField) Apply(db *gorm.DB) *gorm.DB {
 	}
 	if f.StoreId > 0 {
 		db = db.Where("store_id = ?", f.StoreId)
+	}
+	if f.IsSuper > 0 {
+		db = db.Where("is_super = ?", f.IsSuper)
 	}
 	return db
 }
@@ -166,6 +170,7 @@ type RbacRoleFilterField struct {
 	IDs      []uint32
 	StoreId  uint32
 	RoleName string
+	IsSuper  int8
 }
 
 // Apply 应用过滤条件
@@ -181,6 +186,9 @@ func (f *RbacRoleFilterField) Apply(db *gorm.DB) *gorm.DB {
 	}
 	if f.StoreId > 0 {
 		db = db.Where("store_id = ?", f.StoreId)
+	}
+	if f.IsSuper > 0 {
+		db = db.Where("is_super = ?", f.IsSuper)
 	}
 	return db
 }
@@ -199,6 +207,16 @@ func NewRbacRoleRepository(db *gorm.DB) *RbacRoleRepository {
 func (r *RbacRoleRepository) FindByName(ctx context.Context, name string, StoreId uint32) (*RbacRole, error) {
 	item := &RbacRole{}
 	err := r.Db.WithContext(ctx).Where("role_name = ? AND store_id = ?", name, StoreId).First(&item).Error
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+	return item, nil
+}
+
+// FindSuper 根据企业ID获取超管角色
+func (r *RbacRoleRepository) FindSuper(ctx context.Context, StoreId uint32) (*RbacRole, error) {
+	item := &RbacRole{}
+	err := r.Db.WithContext(ctx).Where("is_super = 1 AND store_id = ?", StoreId).First(&item).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}

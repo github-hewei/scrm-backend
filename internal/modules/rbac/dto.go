@@ -122,6 +122,7 @@ type RbacStoreDeleteRequest struct {
 type RbacRoleListRequest struct {
 	RoleName string `json:"role_name"`
 	StoreId  uint32 `json:"store_id"`
+	IsSuper  int8   `json:"is_super" validate:"oneof=0 1"`
 }
 
 // RbacRoleCreateRequest 创建角色请求参数
@@ -130,6 +131,7 @@ type RbacRoleCreateRequest struct {
 	ParentId uint32 `json:"parent_id"`
 	Sort     uint32 `json:"sort"`
 	StoreId  uint32 `json:"store_id"`
+	IsSuper  int8   `json:"is_super" validate:"oneof=0 1"`
 }
 
 // RbacRoleUpdateRequest 更新角色请求参数
@@ -139,6 +141,7 @@ type RbacRoleUpdateRequest struct {
 	ParentId uint32 `json:"parent_id"`
 	Sort     uint32 `json:"sort"`
 	StoreId  uint32 `json:"store_id"`
+	IsSuper  int8   `json:"is_super" validate:"oneof=0 1"`
 }
 
 // RbacRoleDeleteRequest 删除角色请求参数
@@ -168,6 +171,7 @@ type RbacUserListRequest struct {
 	RealName string `json:"real_name"`
 	Page     int    `json:"page" validate:"required,min=1"`
 	Limit    int    `json:"limit" validate:"required,min=1,max=100"`
+	IsSuper  int8   `json:"is_super" validate:"oneof=0 1"`
 }
 
 // RbacUserCreateRequest 创建用户请求参数
