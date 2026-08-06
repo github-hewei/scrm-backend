@@ -2151,6 +2151,65 @@
         }
       }
     },
+    "/rbac/user/set-roles": {
+      "post": {
+        "tags": [
+          "租户用户管理"
+        ],
+        "summary": "设置租户用户角色",
+        "description": "为超管用户分配角色，角色须与用户同企业，普通用户不能绑定超管角色。超管和运营可操作。",
+        "operationId": "platformSetRbacUserRoles",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_id",
+                  "role_ids",
+                  "store_id"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "integer",
+                    "description": "用户ID"
+                  },
+                  "role_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    },
+                    "description": "角色ID列表（仅超管角色）"
+                  },
+                  "store_id": {
+                    "type": "integer",
+                    "description": "用户所属企业ID"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/rbac/user/reset-password": {
       "post": {
         "tags": [

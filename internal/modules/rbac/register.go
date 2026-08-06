@@ -100,5 +100,6 @@ func RegisterPlatform(r *gin.RouterGroup, db *gorm.DB, binder *bind.Binder, conf
 	r.POST("/rbac/user/create", h.userCreate)
 	r.POST("/rbac/user/update", h.userUpdate)
 	r.POST("/rbac/user/delete", h.userDelete)
+	r.POST("/rbac/user/set-roles", h.userSetRoles)
 	r.POST("/rbac/user/reset-password", h.userResetPassword)
 }

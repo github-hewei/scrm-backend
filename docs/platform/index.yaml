@@ -86,6 +86,8 @@ paths:
     $ref: './paths/rbac-user.yaml#/~1rbac~1user~1update'
   /rbac/user/delete:
     $ref: './paths/rbac-user.yaml#/~1rbac~1user~1delete'
+  /rbac/user/set-roles:
+    $ref: './paths/rbac-user.yaml#/~1rbac~1user~1set-roles'
   /rbac/user/reset-password:
     $ref: './paths/rbac-user.yaml#/~1rbac~1user~1reset-password'
 
