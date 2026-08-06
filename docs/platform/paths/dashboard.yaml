@@ -1,0 +1,58 @@
+/dashboard/stats:
+  post:
+    tags:
+      - 仪表盘
+    summary: 获取平台仪表盘统计
+    description: 返回平台核心指标(企业/租户用户/文件)与近30天每日新增趋势。超管和运营可操作。
+    operationId: getDashboardStats
+    security:
+      - BearerAuth: []
+    responses:
+      '200':
+        description: 成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                errcode:
+                  type: integer
+                message:
+                  type: string
+                data:
+                  type: object
+                  properties:
+                    overview:
+                      type: object
+                      description: 核心指标
+                      properties:
+                        store_total:
+                          type: integer
+                          description: 企业总数
+                        store_monthly_new:
+                          type: integer
+                          description: 本月新增企业
+                        user_total:
+                          type: integer
+                          description: 租户用户总数
+                        user_monthly_new:
+                          type: integer
+                          description: 本月新增租户用户
+                        file_total:
+                          type: integer
+                          description: 文件总数
+                        file_total_size:
+                          type: integer
+                          description: 文件总存储占用(字节)
+                    trends:
+                      type: object
+                      description: 近30天每日新增趋势
+                      properties:
+                        store:
+                          type: array
+                          items:
+                            $ref: '../schemas.yaml#/schemas/DailyCount'
+                        user:
+                          type: array
+                          items:
+                            $ref: '../schemas.yaml#/schemas/DailyCount'

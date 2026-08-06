@@ -8,6 +8,8 @@ servers:
     description: API Base Path
 
 paths:
+  /dashboard/stats:
+    $ref: './paths/dashboard.yaml#/~1dashboard~1stats'
   /captcha/generate:
     $ref: './paths/captcha.yaml#/~1captcha~1generate'
   /login:

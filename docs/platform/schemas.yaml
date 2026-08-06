@@ -14,6 +14,16 @@ schemas:
         type: object
         description: 响应数据
 
+  DailyCount:
+    type: object
+    properties:
+      date:
+        type: string
+        description: 日期(YYYY-MM-DD)
+      count:
+        type: integer
+        description: 当日数量
+
   PlatformLoginRequest:
     type: object
     required:

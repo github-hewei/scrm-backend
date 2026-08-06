@@ -3,6 +3,7 @@ package platform
 import (
 	"net/http"
 	"zero-backend/internal/modules/captcha"
+	"zero-backend/internal/modules/dashboard"
 	"zero-backend/internal/modules/platform/user"
 	"zero-backend/internal/modules/rbac"
 	"zero-backend/internal/modules/setting"
@@ -46,6 +47,7 @@ func NewGin(
 
 	settingSvc := provider.NewSettingService(db)
 	upload.RegisterPlatform(protected, db, binder, settingSvc)
+	dashboard.RegisterPlatform(protected, db)
 
 	r.LoadHTMLGlob("./views/*.html")
 	r.Static("/assets", "./views/assets")
