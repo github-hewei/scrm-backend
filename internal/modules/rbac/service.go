@@ -530,6 +530,9 @@ func (s *RbacRoleService) Create(ctx context.Context, req *RbacRoleCreateRequest
 		return err
 	}
 	if req.IsSuper == 1 {
+		if req.StoreId == 0 {
+			return apperror.New(errcode.InvalidInput, apperror.WithMsg("创建超管角色必须指定所属企业"))
+		}
 		if err := s.checkSuperUnique(ctx, req.StoreId, 0); err != nil {
 			return err
 		}
