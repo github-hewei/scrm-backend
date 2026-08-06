@@ -122,7 +122,7 @@ schemas:
         description: 姓名
       is_super:
         type: integer
-        description: 是否为超级管理员（1是 0否）
+        description: 是否为超级管理员（1是 0否），由服务端按请求端侧自动确定，客户端无需传入
       sort:
         type: integer
         description: 排序
@@ -227,6 +227,9 @@ schemas:
       sort:
         type: integer
         description: 排序
+      is_super:
+        type: integer
+        description: 是否超管角色（1是 0否），由服务端按请求端侧自动确定，客户端无需传入
       store_id:
         type: integer
         description: 企业ID

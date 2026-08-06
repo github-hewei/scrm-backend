@@ -3,7 +3,7 @@
     tags:
       - 租户用户管理
     summary: 获取租户用户列表
-    description: 获取指定企业下的管理员列表。超管和运营可操作。
+    description: 平台端仅返回超管用户(is_super=1)，可按企业ID过滤。超管和运营可操作。
     operationId: platformGetRbacUserList
     security:
       - BearerAuth: []
@@ -62,7 +62,7 @@
     tags:
       - 租户用户管理
     summary: 创建租户用户
-    description: 为指定企业创建管理员账号。超管和运营可操作。
+    description: 为指定企业创建超管用户账号(is_super=1)，必须指定所属企业(store_id)。超管和运营可操作。
     operationId: platformCreateRbacUser
     security:
       - BearerAuth: []
@@ -76,6 +76,7 @@
               - username
               - password
               - real_name
+              - store_id
             properties:
               username:
                 type: string

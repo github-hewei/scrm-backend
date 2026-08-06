@@ -2843,6 +2843,66 @@
         }
       }
     },
+    "/upload/file/detail": {
+      "post": {
+        "tags": [
+          "上传文件管理"
+        ],
+        "summary": "获取文件详情",
+        "operationId": "getUploadFileDetail",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "description": "文件ID"
+                  },
+                  "store_id": {
+                    "type": "integer",
+                    "description": "企业ID"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errcode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/UploadFile"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/region/tree": {
       "post": {
         "tags": [
@@ -3026,7 +3086,7 @@
           },
           "is_super": {
             "type": "integer",
-            "description": "是否为超级管理员（1是 0否）"
+            "description": "是否为超级管理员（1是 0否），由服务端按请求端侧自动确定，客户端无需传入"
           },
           "sort": {
             "type": "integer",
@@ -3064,6 +3124,10 @@
           "sort": {
             "type": "integer",
             "description": "排序"
+          },
+          "is_super": {
+            "type": "integer",
+            "description": "是否超管角色（1是 0否），由服务端按请求端侧自动确定，客户端无需传入"
           },
           "store_id": {
             "type": "integer",

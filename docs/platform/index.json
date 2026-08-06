@@ -12,6 +12,28 @@
     }
   ],
   "paths": {
+    "/captcha/generate": {
+      "post": {
+        "tags": [
+          "验证码"
+        ],
+        "summary": "生成图形验证码",
+        "description": "生成点选验证码，返回验证码ID和两张base64编码的图片。\n- master_image：主图（含文字提示的大图）\n- thumb_image：缩略图（需要点击的小图）\n",
+        "operationId": "captchaGenerate",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaptchaGenerateResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/login": {
       "post": {
         "tags": [
@@ -409,7 +431,7 @@
           "平台用户管理"
         ],
         "summary": "重置平台用户密码",
-        "description": "直接重置指定平台管理员的密码，无需旧密码。仅超管可操作。",
+        "description": "系统自动生成随机密码并重置指定平台管理员的密码，无需旧密码。仅超管可操作。",
         "operationId": "resetPlatformUserPassword",
         "security": [
           {
@@ -423,19 +445,12 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "id",
-                  "password"
+                  "id"
                 ],
                 "properties": {
                   "id": {
                     "type": "integer",
                     "description": "用户ID"
-                  },
-                  "password": {
-                    "type": "string",
-                    "description": "新密码",
-                    "minLength": 6,
-                    "maxLength": 20
                   }
                 }
               }
@@ -448,7 +463,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CommonResponse"
+                  "type": "object",
+                  "properties": {
+                    "errcode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "new_password": {
+                          "type": "string",
+                          "description": "系统生成的新密码"
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1531,6 +1563,7 @@
           "RBAC-角色管理"
         ],
         "summary": "获取角色列表",
+        "description": "平台端角色列表，返回平铺结构（非树形），仅包含超管角色(is_super=1)，可按企业ID过滤",
         "operationId": "getRoleList",
         "security": [
           {
@@ -1595,6 +1628,7 @@
           "RBAC-角色管理"
         ],
         "summary": "创建角色",
+        "description": "平台端创建的角色均为超管角色(is_super=1)，必须指定所属企业(store_id)，每个企业仅允许存在一个超管角色",
         "operationId": "createRole",
         "security": [
           {
@@ -1608,7 +1642,8 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "role_name"
+                  "role_name",
+                  "store_id"
                 ],
                 "properties": {
                   "role_name": {
@@ -1652,6 +1687,7 @@
           "RBAC-角色管理"
         ],
         "summary": "更新角色",
+        "description": "平台端仅可更新超管角色，store_id 须与角色所属企业一致，且每个企业仅允许存在一个超管角色",
         "operationId": "updateRole",
         "security": [
           {
@@ -1821,7 +1857,7 @@
           "租户用户管理"
         ],
         "summary": "获取租户用户列表",
-        "description": "获取指定企业下的管理员列表。超管和运营可操作。",
+        "description": "平台端仅返回超管用户(is_super=1)，可按企业ID过滤。超管和运营可操作。",
         "operationId": "platformGetRbacUserList",
         "security": [
           {
@@ -1909,7 +1945,7 @@
           "租户用户管理"
         ],
         "summary": "创建租户用户",
-        "description": "为指定企业创建管理员账号。超管和运营可操作。",
+        "description": "为指定企业创建超管用户账号(is_super=1)，必须指定所属企业(store_id)。超管和运营可操作。",
         "operationId": "platformCreateRbacUser",
         "security": [
           {
@@ -1925,7 +1961,8 @@
                 "required": [
                   "username",
                   "password",
-                  "real_name"
+                  "real_name",
+                  "store_id"
                 ],
                 "properties": {
                   "username": {
@@ -2103,7 +2140,7 @@
           "租户用户管理"
         ],
         "summary": "重置租户用户密码",
-        "description": "直接重置指定企业下管理员的密码，无需旧密码。超管和运营可操作。",
+        "description": "系统自动生成随机密码并重置指定企业下管理员的密码，无需旧密码。超管和运营可操作。",
         "operationId": "platformResetRbacUserPassword",
         "security": [
           {
@@ -2117,8 +2154,7 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "id",
-                  "password"
+                  "id"
                 ],
                 "properties": {
                   "id": {
@@ -2127,13 +2163,7 @@
                   },
                   "store_id": {
                     "type": "integer",
-                    "description": "企业ID"
-                  },
-                  "password": {
-                    "type": "string",
-                    "description": "新密码",
-                    "minLength": 6,
-                    "maxLength": 20
+                    "description": "企业ID（由系统从上下文注入）"
                   }
                 }
               }
@@ -2146,7 +2176,24 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CommonResponse"
+                  "type": "object",
+                  "properties": {
+                    "errcode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "new_password": {
+                          "type": "string",
+                          "description": "系统生成的新密码"
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2385,6 +2432,582 @@
           }
         }
       }
+    },
+    "/upload/group/list": {
+      "post": {
+        "tags": [
+          "上传分组管理"
+        ],
+        "summary": "获取分组列表",
+        "operationId": "getUploadGroupList",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "store_id": {
+                    "type": "integer",
+                    "description": "企业ID"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errcode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "list": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "integer",
+                                "description": "分组ID"
+                              },
+                              "name": {
+                                "type": "string",
+                                "description": "分组名称"
+                              },
+                              "parent_id": {
+                                "type": "integer",
+                                "description": "上级分组ID"
+                              },
+                              "sort": {
+                                "type": "integer",
+                                "description": "排序"
+                              },
+                              "store_id": {
+                                "type": "integer",
+                                "description": "企业ID"
+                              },
+                              "created_at": {
+                                "type": "integer",
+                                "description": "创建时间"
+                              },
+                              "updated_at": {
+                                "type": "integer",
+                                "description": "更新时间"
+                              },
+                              "children": {
+                                "type": "array",
+                                "items": {
+                                  "$ref": "#/paths/~1upload~1group~1list/post/responses/200/content/application~1json/schema/properties/data/properties/list/items"
+                                },
+                                "description": "子分组"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/upload/group/create": {
+      "post": {
+        "tags": [
+          "上传分组管理"
+        ],
+        "summary": "创建分组",
+        "operationId": "createUploadGroup",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "分组名称"
+                  },
+                  "parent_id": {
+                    "type": "integer",
+                    "description": "上级分组ID"
+                  },
+                  "sort": {
+                    "type": "integer",
+                    "description": "排序"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/upload/group/update": {
+      "post": {
+        "tags": [
+          "上传分组管理"
+        ],
+        "summary": "更新分组",
+        "operationId": "updateUploadGroup",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "name"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "description": "分组ID"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "分组名称"
+                  },
+                  "parent_id": {
+                    "type": "integer",
+                    "description": "上级分组ID"
+                  },
+                  "sort": {
+                    "type": "integer",
+                    "description": "排序"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/upload/group/delete": {
+      "post": {
+        "tags": [
+          "上传分组管理"
+        ],
+        "summary": "删除分组",
+        "operationId": "deleteUploadGroup",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "description": "分组ID"
+                  },
+                  "store_id": {
+                    "type": "integer",
+                    "description": "企业ID"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/upload/file/list": {
+      "post": {
+        "tags": [
+          "上传文件管理"
+        ],
+        "summary": "获取文件列表",
+        "operationId": "getUploadFileList",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "page",
+                  "limit"
+                ],
+                "properties": {
+                  "group_id": {
+                    "type": "string",
+                    "description": "分组ID"
+                  },
+                  "file_type": {
+                    "type": "integer",
+                    "description": "文件类型 (10图片 20附件 30视频)"
+                  },
+                  "file_name": {
+                    "type": "string",
+                    "description": "文件名称"
+                  },
+                  "store_id": {
+                    "type": "integer",
+                    "description": "企业ID"
+                  },
+                  "page": {
+                    "type": "integer"
+                  },
+                  "limit": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errcode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "list": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/paths/~1upload~1file~1upload/post/responses/200/content/application~1json/schema/properties/data"
+                          }
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/upload/file/upload": {
+      "post": {
+        "tags": [
+          "上传文件管理"
+        ],
+        "summary": "上传文件",
+        "description": "通过表单上传文件，支持单文件上传",
+        "operationId": "uploadFile",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "上传的文件"
+                  },
+                  "group_id": {
+                    "type": "integer",
+                    "description": "分组ID"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errcode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "description": "文件ID"
+                        },
+                        "group_id": {
+                          "type": "integer",
+                          "description": "分组ID"
+                        },
+                        "channel": {
+                          "type": "integer",
+                          "description": "上传来源 (10后台 20客户端)"
+                        },
+                        "storage": {
+                          "type": "string",
+                          "description": "存储方式"
+                        },
+                        "domain": {
+                          "type": "string",
+                          "description": "存储域名"
+                        },
+                        "file_type": {
+                          "type": "integer",
+                          "description": "文件类型 (10图片 20附件 30视频)"
+                        },
+                        "file_name": {
+                          "type": "string",
+                          "description": "文件名称"
+                        },
+                        "file_path": {
+                          "type": "string",
+                          "description": "文件路径"
+                        },
+                        "file_size": {
+                          "type": "integer",
+                          "description": "文件大小(字节)"
+                        },
+                        "file_ext": {
+                          "type": "string",
+                          "description": "文件扩展名"
+                        },
+                        "cover": {
+                          "type": "string",
+                          "description": "文件封面"
+                        },
+                        "uploader_id": {
+                          "type": "integer",
+                          "description": "上传者用户ID"
+                        },
+                        "store_id": {
+                          "type": "integer",
+                          "description": "企业ID"
+                        },
+                        "created_at": {
+                          "type": "integer",
+                          "description": "创建时间"
+                        },
+                        "updated_at": {
+                          "type": "integer",
+                          "description": "更新时间"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/upload/file/delete": {
+      "post": {
+        "tags": [
+          "上传文件管理"
+        ],
+        "summary": "删除文件",
+        "operationId": "deleteUploadFile",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "description": "文件ID"
+                  },
+                  "store_id": {
+                    "type": "integer",
+                    "description": "企业ID"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/upload/file/detail": {
+      "post": {
+        "tags": [
+          "上传文件管理"
+        ],
+        "summary": "获取文件详情",
+        "operationId": "getUploadFileDetail",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "description": "文件ID"
+                  },
+                  "store_id": {
+                    "type": "integer",
+                    "description": "企业ID"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errcode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/paths/~1upload~1file~1upload/post/responses/200/content/application~1json/schema/properties/data"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2420,7 +3043,9 @@
         "type": "object",
         "required": [
           "username",
-          "password"
+          "password",
+          "captcha_id",
+          "captcha_code"
         ],
         "properties": {
           "username": {
@@ -2432,6 +3057,14 @@
             "type": "string",
             "description": "密码",
             "example": "123456"
+          },
+          "captcha_id": {
+            "type": "string",
+            "description": "验证码ID"
+          },
+          "captcha_code": {
+            "type": "string",
+            "description": "验证码点选坐标（JSON字符串）"
           }
         }
       },
@@ -2575,7 +3208,7 @@
           },
           "is_super": {
             "type": "integer",
-            "description": "是否为超级管理员（1是 0否）"
+            "description": "是否为超级管理员（1是 0否），由服务端按请求端侧自动确定，客户端无需传入"
           },
           "sort": {
             "type": "integer",
@@ -2716,6 +3349,10 @@
             "type": "integer",
             "description": "排序"
           },
+          "is_super": {
+            "type": "integer",
+            "description": "是否超管角色（1是 0否），由服务端按请求端侧自动确定，客户端无需传入"
+          },
           "store_id": {
             "type": "integer",
             "description": "企业ID"
@@ -2775,6 +3412,34 @@
             "description": "新密码",
             "minLength": 6,
             "maxLength": 20
+          }
+        }
+      },
+      "CaptchaGenerateResponse": {
+        "type": "object",
+        "properties": {
+          "errcode": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "captcha_id": {
+                "type": "string",
+                "description": "验证码ID"
+              },
+              "master_image": {
+                "type": "string",
+                "description": "主图(base64)"
+              },
+              "thumb_image": {
+                "type": "string",
+                "description": "缩略图(base64)"
+              }
+            }
           }
         }
       }

@@ -3,6 +3,7 @@
     tags:
       - RBAC-角色管理
     summary: 获取角色列表
+    description: 平台端角色列表，返回平铺结构（非树形），仅包含超管角色(is_super=1)，可按企业ID过滤
     operationId: getRoleList
     security:
       - BearerAuth: []
@@ -43,6 +44,7 @@
     tags:
       - RBAC-角色管理
     summary: 创建角色
+    description: 平台端创建的角色均为超管角色(is_super=1)，必须指定所属企业(store_id)，每个企业仅允许存在一个超管角色
     operationId: createRole
     security:
       - BearerAuth: []
@@ -54,6 +56,7 @@
             type: object
             required:
               - role_name
+              - store_id
             properties:
               role_name:
                 type: string
@@ -80,6 +83,7 @@
     tags:
       - RBAC-角色管理
     summary: 更新角色
+    description: 平台端仅可更新超管角色，store_id 须与角色所属企业一致，且每个企业仅允许存在一个超管角色
     operationId: updateRole
     security:
       - BearerAuth: []

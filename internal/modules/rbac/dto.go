@@ -122,7 +122,7 @@ type RbacStoreDeleteRequest struct {
 type RbacRoleListRequest struct {
 	RoleName string `json:"role_name"`
 	StoreId  uint32 `json:"store_id"`
-	IsSuper  int8   `json:"is_super" validate:"oneof=0 1"`
+	IsSuper  int8   `json:"-"`
 }
 
 // RbacRoleCreateRequest 创建角色请求参数
@@ -131,7 +131,7 @@ type RbacRoleCreateRequest struct {
 	ParentId uint32 `json:"parent_id"`
 	Sort     uint32 `json:"sort"`
 	StoreId  uint32 `json:"store_id"`
-	IsSuper  int8   `json:"is_super" validate:"oneof=0 1"`
+	IsSuper  int8   `json:"-"`
 }
 
 // RbacRoleUpdateRequest 更新角色请求参数
@@ -141,7 +141,7 @@ type RbacRoleUpdateRequest struct {
 	ParentId uint32 `json:"parent_id"`
 	Sort     uint32 `json:"sort"`
 	StoreId  uint32 `json:"store_id"`
-	IsSuper  int8   `json:"is_super" validate:"oneof=0 1"`
+	IsSuper  int8   `json:"-"`
 }
 
 // RbacRoleDeleteRequest 删除角色请求参数
@@ -171,7 +171,7 @@ type RbacUserListRequest struct {
 	RealName string `json:"real_name"`
 	Page     int    `json:"page" validate:"required,min=1"`
 	Limit    int    `json:"limit" validate:"required,min=1,max=100"`
-	IsSuper  int8   `json:"is_super" validate:"oneof=0 1"`
+	IsSuper  int8   `json:"-"`
 }
 
 // RbacUserCreateRequest 创建用户请求参数
@@ -179,7 +179,7 @@ type RbacUserCreateRequest struct {
 	Username string `json:"username" validate:"required,min=5,max=20,alphanum"`
 	Password string `json:"password" validate:"required,min=6,max=20"`
 	RealName string `json:"real_name" validate:"required,min=2,max=20"`
-	IsSuper  int8   `json:"is_super" validate:"oneof=0 1"`
+	IsSuper  int8   `json:"-"`
 	StoreId  uint32 `json:"store_id"`
 	Sort     uint32 `json:"sort"`
 }
@@ -189,7 +189,7 @@ type RbacUserUpdateRequest struct {
 	ID       uint32 `json:"id" validate:"required"`
 	Username string `json:"username" validate:"required,min=5,max=20,alphanum"`
 	RealName string `json:"real_name" validate:"required,min=2,max=20"`
-	IsSuper  int8   `json:"is_super" validate:"oneof=0 1"`
+	IsSuper  int8   `json:"-"`
 	StoreId  uint32 `json:"store_id" validate:"required"`
 	Sort     uint32 `json:"sort"`
 }

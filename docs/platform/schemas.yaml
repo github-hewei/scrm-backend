@@ -143,7 +143,7 @@ schemas:
         description: 姓名
       is_super:
         type: integer
-        description: 是否为超级管理员（1是 0否）
+        description: 是否为超级管理员（1是 0否），由服务端按请求端侧自动确定，客户端无需传入
       sort:
         type: integer
         description: 排序
@@ -263,6 +263,9 @@ schemas:
       sort:
         type: integer
         description: 排序
+      is_super:
+        type: integer
+        description: 是否超管角色（1是 0否），由服务端按请求端侧自动确定，客户端无需传入
       store_id:
         type: integer
         description: 企业ID
@@ -363,3 +366,82 @@ schemas:
         description: 选项名称
       value:
         description: 选项值
+
+  UploadGroup:
+    type: object
+    properties:
+      id:
+        type: integer
+        description: 分组ID
+      name:
+        type: string
+        description: 分组名称
+      parent_id:
+        type: integer
+        description: 上级分组ID
+      sort:
+        type: integer
+        description: 排序
+      store_id:
+        type: integer
+        description: 企业ID
+      created_at:
+        type: integer
+        description: 创建时间
+      updated_at:
+        type: integer
+        description: 更新时间
+      children:
+        type: array
+        items:
+          $ref: '#/schemas/UploadGroup'
+        description: 子分组
+
+  UploadFile:
+    type: object
+    properties:
+      id:
+        type: integer
+        description: 文件ID
+      group_id:
+        type: integer
+        description: 分组ID
+      channel:
+        type: integer
+        description: 上传来源 (10后台 20客户端)
+      storage:
+        type: string
+        description: 存储方式
+      domain:
+        type: string
+        description: 存储域名
+      file_type:
+        type: integer
+        description: 文件类型 (10图片 20附件 30视频)
+      file_name:
+        type: string
+        description: 文件名称
+      file_path:
+        type: string
+        description: 文件路径
+      file_size:
+        type: integer
+        description: 文件大小(字节)
+      file_ext:
+        type: string
+        description: 文件扩展名
+      cover:
+        type: string
+        description: 文件封面
+      uploader_id:
+        type: integer
+        description: 上传者用户ID
+      store_id:
+        type: integer
+        description: 企业ID
+      created_at:
+        type: integer
+        description: 创建时间
+      updated_at:
+        type: integer
+        description: 更新时间
