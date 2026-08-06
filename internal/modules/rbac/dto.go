@@ -99,6 +99,14 @@ type RbacStoreCreateRequest struct {
 	Description  string `json:"description" validate:"max=500"`
 	LogoImageID  uint32 `json:"logo_image_id"`
 	Sort         uint32 `json:"sort"`
+	Username     string `json:"username" validate:"required,min=5,max=20,alphanum"`
+}
+
+// RbacStoreCreateResponse 创建企业响应
+type RbacStoreCreateResponse struct {
+	StoreId  uint32 `json:"store_id"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 // RbacStoreUpdateRequest 编辑企业请求参数

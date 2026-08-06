@@ -66,7 +66,7 @@ func (s *RbacUserService) Create(ctx context.Context, req *RbacUserCreateRequest
 	if req.IsSuper == 1 && req.StoreId == 0 {
 		return apperror.New(errcode.InvalidInput, apperror.WithMsg("创建超管用户必须指定所属企业"))
 	}
-	if err := s.checkUsername(ctx, req.Username, req.StoreId); err != nil {
+	if err := s.checkUsername(ctx, req.Username); err != nil {
 		return err
 	}
 
@@ -103,7 +103,7 @@ func (s *RbacUserService) Update(ctx context.Context, req *RbacUserUpdateRequest
 		return apperror.New(errcode.NotFound, apperror.WithMsg("用户不存在"))
 	}
 	if item.Username != req.Username {
-		if err := s.checkUsername(ctx, req.Username, req.StoreId); err != nil {
+		if err := s.checkUsername(ctx, req.Username); err != nil {
 			return err
 		}
 	}
@@ -219,9 +219,9 @@ func (s *RbacUserService) SetRoles(ctx context.Context, req *RbacUserRoleSetRequ
 	})
 }
 
-// checkUsername 检查用户名
-func (s *RbacUserService) checkUsername(ctx context.Context, username string, storeId uint32) error {
-	filter := &RbacUserUsernameFilterField{Username: username, StoreId: storeId}
+// checkUsername 检查用户名全局唯一
+func (s *RbacUserService) checkUsername(ctx context.Context, username string) error {
+	filter := &RbacUserUsernameFilterField{Username: username}
 	_, err := s.repo.FindOne(ctx, filter)
 	if err != nil {
 		if errors.Is(err, baserepo.ErrRecordNotFound) {
@@ -849,12 +849,26 @@ func (s *RbacApiService) checkName(ctx context.Context, name string) error {
 
 // RbacStoreService 企业服务
 type RbacStoreService struct {
-	repo *RbacStoreRepository
+	db           *gorm.DB
+	repo         *RbacStoreRepository
+	userRepo     *RbacUserRepository
+	roleRepo     *RbacRoleRepository
+	userRoleRepo *RbacUserRoleRepository
+	roleMenuRepo *RbacRoleMenuRepository
+	menuRepo     *RbacMenuRepository
 }
 
 // NewRbacStoreService 创建企业服务
-func NewRbacStoreService(repo *RbacStoreRepository) *RbacStoreService {
-	return &RbacStoreService{repo: repo}
+func NewRbacStoreService(db *gorm.DB, repo *RbacStoreRepository, userRepo *RbacUserRepository, roleRepo *RbacRoleRepository, userRoleRepo *RbacUserRoleRepository, roleMenuRepo *RbacRoleMenuRepository, menuRepo *RbacMenuRepository) *RbacStoreService {
+	return &RbacStoreService{
+		db:           db,
+		repo:         repo,
+		userRepo:     userRepo,
+		roleRepo:     roleRepo,
+		userRoleRepo: userRoleRepo,
+		roleMenuRepo: roleMenuRepo,
+		menuRepo:     menuRepo,
+	}
 }
 
 // FindList 获取企业列表
@@ -889,11 +903,70 @@ func (s *RbacStoreService) FindList(ctx context.Context, req *RbacStoreListReque
 	return result, nil
 }
 
-// Create 创建企业
-func (s *RbacStoreService) Create(ctx context.Context, req *RbacStoreCreateRequest) error {
+// defaultSuperRoleName 企业默认超管角色名称
+const defaultSuperRoleName = "超级管理员"
+
+// Create 创建企业并初始化默认超管账号
+func (s *RbacStoreService) Create(ctx context.Context, req *RbacStoreCreateRequest) (*RbacStoreCreateResponse, error) {
 	if err := s.checkName(ctx, req.Name); err != nil {
-		return err
+		return nil, err
 	}
+	if err := s.checkAdminUsername(ctx, req.Username); err != nil {
+		return nil, err
+	}
+
+	password := helper.RandomStringWithSymbols(12)
+	hashedPassword, err := helper.HashPassword(password)
+	if err != nil {
+		return nil, apperror.Wrap(errcode.Internal, err, apperror.WithMsg("密码加密失败"))
+	}
+
+	var storeID uint32
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		store, err := s.createStore(ctx, tx, req)
+		if err != nil {
+			return err
+		}
+		storeID = store.ID
+		role, err := s.createSuperRole(ctx, tx, store.ID)
+		if err != nil {
+			return err
+		}
+		user, err := s.createSuperUser(ctx, tx, store.ID, req.Username, hashedPassword)
+		if err != nil {
+			return err
+		}
+		if err := s.bindUserRole(ctx, tx, store.ID, user.ID, role.ID); err != nil {
+			return err
+		}
+		return s.assignAllMenus(ctx, tx, store.ID, role.ID)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &RbacStoreCreateResponse{
+		StoreId:  storeID,
+		Username: req.Username,
+		Password: password,
+	}, nil
+}
+
+// checkAdminUsername 检查超管登录账号全局唯一
+func (s *RbacStoreService) checkAdminUsername(ctx context.Context, username string) error {
+	filter := &RbacUserUsernameFilterField{Username: username}
+	_, err := s.userRepo.FindOne(ctx, filter)
+	if err != nil {
+		if errors.Is(err, baserepo.ErrRecordNotFound) {
+			return nil
+		}
+		return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("检查登录账号失败"))
+	}
+	return apperror.New(errcode.Conflict, apperror.WithMsg("登录账号已存在"))
+}
+
+// createStore 创建企业
+func (s *RbacStoreService) createStore(ctx context.Context, tx *gorm.DB, req *RbacStoreCreateRequest) (*RbacStore, error) {
 	item := &RbacStore{
 		Name:         req.Name,
 		ShortName:    req.ShortName,
@@ -903,8 +976,76 @@ func (s *RbacStoreService) Create(ctx context.Context, req *RbacStoreCreateReque
 		LogoImageID:  req.LogoImageID,
 		Sort:         req.Sort,
 	}
-	if err := s.repo.Create(ctx, item); err != nil {
-		return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("创建企业失败"))
+	if err := s.repo.Create(ctx, item, baserepo.WithDB[*baserepo.CreateConfig](tx)); err != nil {
+		return nil, apperror.Wrap(errcode.Internal, err, apperror.WithMsg("创建企业失败"))
+	}
+	return item, nil
+}
+
+// createSuperRole 创建企业默认超管角色
+func (s *RbacStoreService) createSuperRole(ctx context.Context, tx *gorm.DB, storeId uint32) (*RbacRole, error) {
+	item := &RbacRole{
+		RoleName: defaultSuperRoleName,
+		StoreId:  storeId,
+		IsSuper:  1,
+	}
+	if err := s.roleRepo.Create(ctx, item, baserepo.WithDB[*baserepo.CreateConfig](tx)); err != nil {
+		return nil, apperror.Wrap(errcode.Internal, err, apperror.WithMsg("创建超管角色失败"))
+	}
+	return item, nil
+}
+
+// createSuperUser 创建企业默认超管用户(初始密码由系统生成，创建响应中返回一次)
+func (s *RbacStoreService) createSuperUser(ctx context.Context, tx *gorm.DB, storeId uint32, username, hashedPassword string) (*RbacUser, error) {
+	item := &RbacUser{
+		Username: username,
+		RealName: username,
+		Password: hashedPassword,
+		IsSuper:  1,
+		StoreId:  storeId,
+	}
+	if err := s.userRepo.Create(ctx, item, baserepo.WithDB[*baserepo.CreateConfig](tx)); err != nil {
+		return nil, apperror.Wrap(errcode.Internal, err, apperror.WithMsg("创建超管用户失败"))
+	}
+	return item, nil
+}
+
+// bindUserRole 绑定用户与角色
+func (s *RbacStoreService) bindUserRole(ctx context.Context, tx *gorm.DB, storeId, userId, roleId uint32) error {
+	item := &RbacUserRole{
+		UserId:  userId,
+		RoleId:  roleId,
+		StoreId: storeId,
+	}
+	if err := s.userRoleRepo.Create(ctx, item, baserepo.WithDB[*baserepo.CreateConfig](tx)); err != nil {
+		return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("绑定超管角色失败"))
+	}
+	return nil
+}
+
+// assignAllMenus 将全部菜单权限分配给角色
+func (s *RbacStoreService) assignAllMenus(ctx context.Context, tx *gorm.DB, storeId, roleId uint32) error {
+	menus, err := s.menuRepo.FindAll(ctx, nil, nil, nil,
+		baserepo.WithDB[*baserepo.QueryConfig](tx),
+		baserepo.WithScopes(nil),
+	)
+	if err != nil {
+		return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("获取菜单列表失败"))
+	}
+	if len(menus) == 0 {
+		return nil
+	}
+
+	roleMenus := make([]*RbacRoleMenu, 0, len(menus))
+	for _, menu := range menus {
+		roleMenus = append(roleMenus, &RbacRoleMenu{
+			RoleId:  roleId,
+			MenuId:  menu.ID,
+			StoreId: storeId,
+		})
+	}
+	if err := s.roleMenuRepo.CreateBatch(ctx, roleMenus, baserepo.WithDB[*baserepo.CreateConfig](tx)); err != nil {
+		return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("分配菜单权限失败"))
 	}
 	return nil
 }

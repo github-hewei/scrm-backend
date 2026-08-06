@@ -165,7 +165,7 @@ type RbacStore struct {
 // RbacUser 管理员表模型
 type RbacUser struct {
 	ID        uint32 `json:"id" gorm:"primaryKey"`
-	Username  string `json:"username" gorm:"size:255;not null;default:'';comment:用户名"`
+	Username  string `json:"username" gorm:"size:255;not null;default:'';comment:用户名;uniqueIndex"`
 	Password  string `json:"-" gorm:"size:255;not null;default:'';comment:登录密码"`
 	RealName  string `json:"real_name" gorm:"size:255;not null;default:'';comment:姓名"`
 	IsSuper   int8   `json:"is_super" gorm:"type:tinyint;not null;default:0;comment:是否为超级管理员"`

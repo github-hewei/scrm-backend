@@ -286,11 +286,12 @@ func (h *handler) storeCreate(ctx *gin.Context) {
 		response.Error(ctx, err)
 		return
 	}
-	if err := h.storeServ.Create(ctx.Request.Context(), req); err != nil {
+	result, err := h.storeServ.Create(ctx.Request.Context(), req)
+	if err != nil {
 		response.Error(ctx, err)
 		return
 	}
-	response.Success(ctx, "创建成功", nil)
+	response.Success(ctx, "创建成功", result)
 }
 
 // storeUpdate 更新企业

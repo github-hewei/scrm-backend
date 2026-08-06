@@ -306,3 +306,6 @@ CREATE TABLE `gaz_platform_user` (
 
 ALTER TABLE `gaz_rbac_role`
 ADD COLUMN `is_super` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT '是否为超级管理员角色';
+
+-- [CHECK POINT] --
+ALTER TABLE `gaz_rbac_user` ADD UNIQUE KEY `idx_username` (`username`);

@@ -37,9 +37,8 @@ func (f *RbacUserFilterField) Apply(db *gorm.DB) *gorm.DB {
 	return db
 }
 
-// RbacUserUsernameFilterField 用户名筛选条件
+// RbacUserUsernameFilterField 用户名筛选条件(用户名全局唯一，不按企业过滤)
 type RbacUserUsernameFilterField struct {
-	StoreId  uint32
 	Username string
 }
 
@@ -47,9 +46,6 @@ type RbacUserUsernameFilterField struct {
 func (f *RbacUserUsernameFilterField) Apply(db *gorm.DB) *gorm.DB {
 	if f == nil {
 		return db
-	}
-	if f.StoreId != 0 {
-		db = db.Where("store_id = ?", f.StoreId)
 	}
 	if f.Username != "" {
 		db = db.Where("username = ?", f.Username)

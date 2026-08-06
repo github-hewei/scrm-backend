@@ -82,6 +82,10 @@ func (s *AuthService) Login(ctx context.Context, req *AuthLoginRequest) (*AdminL
 		return nil, "", apperror.Wrap(errcode.Internal, err, apperror.WithMsg("登录失败"))
 	}
 
+	if item.Password == "" {
+		return nil, "", apperror.New(errcode.InvalidInput, apperror.WithMsg("该账号尚未设置密码，请联系平台重置密码"))
+	}
+
 	ok, err := helper.CheckPassword(req.Password, item.Password)
 	if err != nil {
 		return nil, "", apperror.Wrap(errcode.Internal, err, apperror.WithMsg("验证密码失败"))

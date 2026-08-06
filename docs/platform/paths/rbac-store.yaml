@@ -58,7 +58,7 @@
     tags:
       - 企业管理
     summary: 创建企业
-    description: 创建一个新的租户企业。超管和运营可操作。
+    description: 创建一个新的租户企业，并自动初始化该企业的默认超管角色与超管用户：超管用户绑定超管角色且获得全部菜单权限；超管初始密码由系统随机生成，仅在创建响应中返回一次，建议首次登录后修改。超管和运营可操作。
     operationId: platformCreateStore
     security:
       - BearerAuth: []
@@ -73,6 +73,7 @@
               - short_name
               - contact
               - contact_phone
+              - username
             properties:
               name:
                 type: string
@@ -95,13 +96,35 @@
               sort:
                 type: integer
                 description: 排序
+              username:
+                type: string
+                description: 超管登录账号（全局唯一），初始密码由系统生成并在响应中返回
+                minLength: 5
+                maxLength: 20
     responses:
       '200':
         description: 成功
         content:
           application/json:
             schema:
-              $ref: '../schemas.yaml#/schemas/CommonResponse'
+              type: object
+              properties:
+                errcode:
+                  type: integer
+                message:
+                  type: string
+                data:
+                  type: object
+                  properties:
+                    store_id:
+                      type: integer
+                      description: 企业ID
+                    username:
+                      type: string
+                      description: 超管登录账号
+                    password:
+                      type: string
+                      description: 超管初始随机密码（仅创建时返回一次，请妥善保管）
 
 /rbac/store/update:
   post:
