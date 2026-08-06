@@ -3,15 +3,19 @@
     tags:
       - RBAC-角色管理
     summary: 获取角色列表
-    description: 平台端角色列表，返回平铺结构（非树形），仅包含超管角色(is_super=1)，可按企业ID过滤
+    description: 平台端角色列表（分页），返回平铺结构（非树形），仅包含超管角色(is_super=1)，可按企业ID过滤
     operationId: getRoleList
     security:
       - BearerAuth: []
     requestBody:
+      required: true
       content:
         application/json:
           schema:
             type: object
+            required:
+              - page
+              - limit
             properties:
               role_name:
                 type: string
@@ -19,6 +23,12 @@
               store_id:
                 type: integer
                 description: 企业ID
+              page:
+                type: integer
+                description: 页码
+              limit:
+                type: integer
+                description: 每页数量(最大100)
     responses:
       '200':
         description: 成功
@@ -38,6 +48,9 @@
                       type: array
                       items:
                         $ref: '../schemas.yaml#/schemas/RbacRole'
+                    total:
+                      type: integer
+                      description: 总数
 
 /rbac/role/create:
   post:

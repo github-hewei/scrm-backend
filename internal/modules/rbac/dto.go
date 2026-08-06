@@ -125,6 +125,15 @@ type RbacRoleListRequest struct {
 	IsSuper  int8   `json:"-"`
 }
 
+// RbacRolePageListRequest 平台端角色分页列表请求参数
+type RbacRolePageListRequest struct {
+	RoleName string `json:"role_name"`
+	StoreId  uint32 `json:"store_id"`
+	Page     int    `json:"page" validate:"required,min=1"`
+	Limit    int    `json:"limit" validate:"required,min=1,max=100"`
+	IsSuper  int8   `json:"-"`
+}
+
 // RbacRoleCreateRequest 创建角色请求参数
 type RbacRoleCreateRequest struct {
 	RoleName string `json:"role_name" validate:"required,min=2,max=50"`

@@ -370,9 +370,9 @@ func (h *handler) roleList(ctx *gin.Context) {
 	response.Success(ctx, "请求成功", result)
 }
 
-// platformRoleList 平台端获取角色列表(平铺结构，仅超管角色，可按企业过滤)
+// platformRoleList 平台端获取角色列表(分页，仅超管角色，可按企业过滤)
 func (h *handler) platformRoleList(ctx *gin.Context) {
-	req := &RbacRoleListRequest{}
+	req := &RbacRolePageListRequest{}
 	if err := h.binder.ShouldBindJSON(ctx, req); err != nil {
 		response.Error(ctx, err)
 		return

@@ -1563,7 +1563,7 @@
           "RBAC-角色管理"
         ],
         "summary": "获取角色列表",
-        "description": "平台端角色列表，返回平铺结构（非树形），仅包含超管角色(is_super=1)，可按企业ID过滤",
+        "description": "平台端角色列表（分页），返回平铺结构（非树形），仅包含超管角色(is_super=1)，可按企业ID过滤",
         "operationId": "getRoleList",
         "security": [
           {
@@ -1571,10 +1571,15 @@
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
+                "required": [
+                  "page",
+                  "limit"
+                ],
                 "properties": {
                   "role_name": {
                     "type": "string",
@@ -1583,6 +1588,14 @@
                   "store_id": {
                     "type": "integer",
                     "description": "企业ID"
+                  },
+                  "page": {
+                    "type": "integer",
+                    "description": "页码"
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "description": "每页数量(最大100)"
                   }
                 }
               }
@@ -1611,6 +1624,10 @@
                           "items": {
                             "$ref": "#/components/schemas/RbacRole"
                           }
+                        },
+                        "total": {
+                          "type": "integer",
+                          "description": "总数"
                         }
                       }
                     }
@@ -1882,11 +1899,11 @@
                   },
                   "username": {
                     "type": "string",
-                    "description": "用户名（模糊搜索）"
+                    "description": "用户名（前缀匹配）"
                   },
                   "real_name": {
                     "type": "string",
-                    "description": "姓名（模糊搜索）"
+                    "description": "姓名（前缀匹配）"
                   },
                   "page": {
                     "type": "integer",
@@ -1895,7 +1912,7 @@
                   },
                   "limit": {
                     "type": "integer",
-                    "description": "每页数量",
+                    "description": "每页数量(最大100)",
                     "example": 20
                   }
                 }
@@ -3225,6 +3242,39 @@
           "updated_at": {
             "type": "integer",
             "description": "更新时间"
+          },
+          "rbac_user_role": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "description": "关联ID"
+                },
+                "user_id": {
+                  "type": "integer",
+                  "description": "用户ID"
+                },
+                "role_id": {
+                  "type": "integer",
+                  "description": "角色ID"
+                },
+                "store_id": {
+                  "type": "integer",
+                  "description": "企业ID"
+                },
+                "created_at": {
+                  "type": "integer",
+                  "description": "创建时间"
+                },
+                "rbac_role": {
+                  "$ref": "#/components/schemas/RbacRole",
+                  "description": "角色信息"
+                }
+              }
+            },
+            "description": "关联角色列表"
           }
         }
       },

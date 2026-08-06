@@ -156,6 +156,33 @@ schemas:
       updated_at:
         type: integer
         description: 更新时间
+      rbac_user_role:
+        type: array
+        items:
+          $ref: '#/schemas/RbacUserRole'
+        description: 关联角色列表
+
+  RbacUserRole:
+    type: object
+    properties:
+      id:
+        type: integer
+        description: 关联ID
+      user_id:
+        type: integer
+        description: 用户ID
+      role_id:
+        type: integer
+        description: 角色ID
+      store_id:
+        type: integer
+        description: 企业ID
+      created_at:
+        type: integer
+        description: 创建时间
+      rbac_role:
+        $ref: '#/schemas/RbacRole'
+        description: 角色信息
 
   ChangePasswordRequest:
     type: object

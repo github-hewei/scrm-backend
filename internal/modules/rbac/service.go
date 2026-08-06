@@ -527,21 +527,40 @@ func (s *RbacRoleService) FindTreeList(ctx context.Context, req *RbacRoleListReq
 	return list, nil
 }
 
-// FindList 获取角色平铺列表(平台端跨企业视图使用，不构建树形结构)
-func (s *RbacRoleService) FindList(ctx context.Context, req *RbacRoleListRequest) ([]*RbacRole, error) {
+// FindList 获取角色分页列表(平台端跨企业视图使用，不构建树形结构)
+func (s *RbacRoleService) FindList(ctx context.Context, req *RbacRolePageListRequest) (*ListResult, error) {
+	result := &ListResult{List: []*RbacRole{}, Total: 0}
+
 	filter := &RbacRoleFilterField{
 		StoreId:  req.StoreId,
 		RoleName: req.RoleName,
 		IsSuper:  req.IsSuper,
 	}
-	list, err := s.repo.FindAll(ctx, filter, nil, nil,
+
+	pagination := baserepo.NewPagination(req.Page, req.Limit)
+	orders := baserepo.Orders{
+		{Field: "sort", Sort: "asc"},
+		{Field: "id", Sort: "desc"},
+	}
+
+	total, err := s.repo.Count(ctx, filter, baserepo.WithScopes(nil))
+	if err != nil {
+		return nil, apperror.Wrap(errcode.Internal, err, apperror.WithMsg("获取角色列表失败"))
+	}
+	if total == 0 {
+		return result, nil
+	}
+	result.Total = total
+
+	list, err := s.repo.FindAll(ctx, filter, pagination, orders,
 		baserepo.WithScopes(nil),
 		baserepo.WithPreloads("RbacRoleMenu.RbacMenu"),
 	)
 	if err != nil {
 		return nil, apperror.Wrap(errcode.Internal, err, apperror.WithMsg("获取角色列表失败"))
 	}
-	return list, nil
+	result.List = list
+	return result, nil
 }
 
 // Create 创建角色
