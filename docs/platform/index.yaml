@@ -141,6 +141,8 @@ components:
       $ref: './schemas.yaml#/schemas/RbacStore'
     RbacUser:
       $ref: './schemas.yaml#/schemas/RbacUser'
+    RbacUserRole:
+      $ref: './schemas.yaml#/schemas/RbacUserRole'
     RbacMenu:
       $ref: './schemas.yaml#/schemas/RbacMenu'
     RbacApi:
@@ -153,3 +155,5 @@ components:
       $ref: './schemas.yaml#/schemas/ChangePasswordRequest'
     CaptchaGenerateResponse:
       $ref: './schemas.yaml#/schemas/CaptchaGenerateResponse'
+    DailyCount:
+      $ref: './schemas.yaml#/schemas/DailyCount'

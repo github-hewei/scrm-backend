@@ -266,6 +266,11 @@ schemas:
       updated_at:
         type: integer
         description: 更新时间
+      children:
+        type: array
+        items:
+          $ref: '#/schemas/RbacRole'
+        description: 子角色
 
   User:
     type: object

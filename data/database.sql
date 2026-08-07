@@ -59,6 +59,7 @@ CREATE TABLE `gaz_rbac_user` (
   `updated_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '更新时间',
   `deleted_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '删除时间',
   PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_username` (`username`),
   KEY `store_id` (`store_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARSET=utf8mb4 COMMENT='用户记录表';
 
@@ -86,7 +87,6 @@ CREATE TABLE `gaz_rbac_user_role` (
   `store_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '企业ID',
   `created_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_username` (`username`),
   KEY `user_id` (`user_id`),
   KEY `role_id` (`role_id`),
   KEY `store_id` (`store_id`)

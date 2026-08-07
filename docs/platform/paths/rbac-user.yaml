@@ -93,9 +93,6 @@
                 description: 姓名
                 minLength: 2
                 maxLength: 20
-              is_super:
-                type: integer
-                description: 是否超级管理员 (0否 1是)
               store_id:
                 type: integer
                 description: 企业ID
@@ -140,9 +137,6 @@
               real_name:
                 type: string
                 description: 姓名
-              is_super:
-                type: integer
-                description: 是否超级管理员
               store_id:
                 type: integer
                 description: 企业ID

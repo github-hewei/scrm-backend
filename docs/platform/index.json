@@ -79,23 +79,13 @@
                             "store": {
                               "type": "array",
                               "items": {
-                                "$ref": "#/paths/~1dashboard~1stats/post/responses/200/content/application~1json/schema/properties/data/properties/trends/properties/user/items"
+                                "$ref": "#/components/schemas/DailyCount"
                               }
                             },
                             "user": {
                               "type": "array",
                               "items": {
-                                "type": "object",
-                                "properties": {
-                                  "date": {
-                                    "type": "string",
-                                    "description": "日期(YYYY-MM-DD)"
-                                  },
-                                  "count": {
-                                    "type": "integer",
-                                    "description": "当日数量"
-                                  }
-                                }
+                                "$ref": "#/components/schemas/DailyCount"
                               }
                             }
                           }
@@ -2187,10 +2177,6 @@
                     "minLength": 2,
                     "maxLength": 20
                   },
-                  "is_super": {
-                    "type": "integer",
-                    "description": "是否超级管理员 (0否 1是)"
-                  },
                   "store_id": {
                     "type": "integer",
                     "description": "企业ID"
@@ -2255,10 +2241,6 @@
                   "real_name": {
                     "type": "string",
                     "description": "姓名"
-                  },
-                  "is_super": {
-                    "type": "integer",
-                    "description": "是否超级管理员"
                   },
                   "store_id": {
                     "type": "integer",
@@ -3492,35 +3474,38 @@
           "rbac_user_role": {
             "type": "array",
             "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "integer",
-                  "description": "关联ID"
-                },
-                "user_id": {
-                  "type": "integer",
-                  "description": "用户ID"
-                },
-                "role_id": {
-                  "type": "integer",
-                  "description": "角色ID"
-                },
-                "store_id": {
-                  "type": "integer",
-                  "description": "企业ID"
-                },
-                "created_at": {
-                  "type": "integer",
-                  "description": "创建时间"
-                },
-                "rbac_role": {
-                  "$ref": "#/components/schemas/RbacRole",
-                  "description": "角色信息"
-                }
-              }
+              "$ref": "#/components/schemas/RbacUserRole"
             },
             "description": "关联角色列表"
+          }
+        }
+      },
+      "RbacUserRole": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "关联ID"
+          },
+          "user_id": {
+            "type": "integer",
+            "description": "用户ID"
+          },
+          "role_id": {
+            "type": "integer",
+            "description": "角色ID"
+          },
+          "store_id": {
+            "type": "integer",
+            "description": "企业ID"
+          },
+          "created_at": {
+            "type": "integer",
+            "description": "创建时间"
+          },
+          "rbac_role": {
+            "$ref": "#/components/schemas/RbacRole",
+            "description": "角色信息"
           }
         }
       },
@@ -3736,6 +3721,19 @@
                 "description": "缩略图(base64)"
               }
             }
+          }
+        }
+      },
+      "DailyCount": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "日期(YYYY-MM-DD)"
+          },
+          "count": {
+            "type": "integer",
+            "description": "当日数量"
           }
         }
       }
