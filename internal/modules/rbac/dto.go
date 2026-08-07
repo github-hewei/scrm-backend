@@ -34,14 +34,18 @@ type RbacMenuUpdateRequest struct {
 // RbacMenuSyncRequest 同步菜单请求参数
 type RbacMenuSyncRequest struct {
 	Name      string `json:"name" validate:"required,min=2,max=20"`
-	Type      int8   `json:"type" validate:"required,gt=0"`
-	ParentId  uint32 `json:"parent_id"`
 	Path      string `json:"path" validate:"required"`
-	IsPage    int8   `json:"is_page"`
-	ModuleKey string `json:"module_key"`
+	ModuleKey string `json:"module_key" validate:"required"`
 	Sort      uint32 `json:"sort"`
 
-	Children []RbacMenuSyncRequest `json:"children"`
+	Children []RbacMenuSyncRequest       `json:"children"`
+	Actions  []RbacMenuActionSyncRequest `json:"actions"`
+}
+
+// RbacMenuActionSyncRequest 同步操作菜单请求参数
+type RbacMenuActionSyncRequest struct {
+	Name       string `json:"name" validate:"required,min=2,max=20"`
+	ActionMark string `json:"action_mark" validate:"required"`
 }
 
 // RbacMenuDeleteRequest 删除数据

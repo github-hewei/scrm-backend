@@ -7,6 +7,7 @@ import (
 	"github.com/241x/zero-kit/apperror"
 	"github.com/241x/zero-kit/baserepo"
 	"github.com/241x/zero-kit/helper"
+	"github.com/241x/zero-kit/logger"
 	"github.com/241x/zero-web/errcode"
 	"gorm.io/gorm"
 )
@@ -262,12 +263,12 @@ func (s *RbacUserService) ResetPassword(ctx context.Context, req *RbacUserResetP
 type RbacMenuService struct {
 	repo    *RbacMenuRepository
 	apiRepo *RbacMenuApiRepository
-	Db      *gorm.DB
+	db      *gorm.DB
 }
 
 // NewRbacMenuService 创建菜单服务
 func NewRbacMenuService(repo *RbacMenuRepository, apiRepo *RbacMenuApiRepository, db *gorm.DB) *RbacMenuService {
-	return &RbacMenuService{repo: repo, apiRepo: apiRepo, Db: db}
+	return &RbacMenuService{repo: repo, apiRepo: apiRepo, db: db}
 }
 
 // FindTreeList 获取菜单树
@@ -353,10 +354,29 @@ func (s *RbacMenuService) Delete(ctx context.Context, req *RbacMenuDeleteRequest
 	return nil
 }
 
-// Sync 同步菜单
+// syncStats 同步菜单统计(新增/更新/删除数量，用于日志输出)
+type syncStats struct {
+	created int
+	updated int
+	deleted int
+}
+
+// Sync 同步菜单(页面+操作全量对账，以数据源为准)
 func (s *RbacMenuService) Sync(ctx context.Context, req []RbacMenuSyncRequest) error {
-	return s.Db.Transaction(func(tx *gorm.DB) error {
-		list, err := s.repo.FindAll(ctx, &RbacMenuFilterField{Type: 10}, nil, nil,
+	if err := validateSyncReq(req); err != nil {
+		return err
+	}
+
+	stats := &syncStats{}
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		pages, err := s.repo.FindAll(ctx, &RbacMenuFilterField{Type: 10}, nil, nil,
+			baserepo.WithDB[*baserepo.QueryConfig](tx),
+			baserepo.WithScopes(nil),
+		)
+		if err != nil {
+			return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("同步菜单失败"))
+		}
+		actions, err := s.repo.FindAll(ctx, &RbacMenuFilterField{Type: 20}, nil, nil,
 			baserepo.WithDB[*baserepo.QueryConfig](tx),
 			baserepo.WithScopes(nil),
 		)
@@ -364,61 +384,175 @@ func (s *RbacMenuService) Sync(ctx context.Context, req []RbacMenuSyncRequest) e
 			return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("同步菜单失败"))
 		}
 
-		menuMap := map[string]*RbacMenu{}
-		for _, item := range list {
-			menuMap[item.Path] = item
+		pageMap := make(map[string]*RbacMenu, len(pages))
+		for _, page := range pages {
+			pageMap[page.Path] = page
 		}
 
-		if err := s.SyncMenuList(ctx, req, 0, menuMap, tx); err != nil {
+		actionIdx := make(map[uint32]map[string]*RbacMenu)
+		for _, action := range actions {
+			if actionIdx[action.ParentId] == nil {
+				actionIdx[action.ParentId] = make(map[string]*RbacMenu)
+			}
+			actionIdx[action.ParentId][action.ActionMark] = action
+		}
+
+		if err := s.syncPageList(ctx, req, 0, pageMap, actionIdx, stats, tx); err != nil {
 			return err
 		}
-		for _, item := range menuMap {
-			if err := s.repo.Delete(ctx, item.ID, baserepo.WithDB[*baserepo.DeleteConfig](tx)); err != nil {
+
+		// 清理: 数据源未包含的页面及其操作菜单
+		for _, page := range pageMap {
+			if err := s.deleteActionList(ctx, actionIdx[page.ID], stats, tx); err != nil {
+				return err
+			}
+			if err := s.repo.Delete(ctx, page.ID, baserepo.WithDB[*baserepo.DeleteConfig](tx)); err != nil {
 				return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("同步菜单失败"))
 			}
+			stats.deleted++
 		}
 		return nil
-	})
+	}); err != nil {
+		return err
+	}
+
+	logger.Ctx(ctx).Info("同步菜单完成",
+		"created", stats.created,
+		"updated", stats.updated,
+		"deleted", stats.deleted,
+	)
+	return nil
 }
 
-// SyncMenuList 递归同步菜单
-func (s *RbacMenuService) SyncMenuList(ctx context.Context, req []RbacMenuSyncRequest, parentId uint32, menuMap map[string]*RbacMenu, tx *gorm.DB) error {
-	for _, item := range req {
-		menu, exists := menuMap[item.Path]
+// syncPageList 递归同步页面菜单及其操作菜单
+func (s *RbacMenuService) syncPageList(ctx context.Context, nodes []RbacMenuSyncRequest, parentId uint32, pageMap map[string]*RbacMenu, actionIdx map[uint32]map[string]*RbacMenu, stats *syncStats, tx *gorm.DB) error {
+	for _, node := range nodes {
+		page, exists := pageMap[node.Path]
 		if exists {
+			stats.updated++
 			updateData := map[string]any{
-				"module_key": item.ModuleKey,
-				"sort":       item.Sort,
-				"type":       item.Type,
-				"name":       item.Name,
-				"is_page":    item.IsPage,
+				"name":       node.Name,
+				"module_key": node.ModuleKey,
+				"sort":       node.Sort,
 				"parent_id":  parentId,
 			}
-			if err := s.repo.Updates(ctx, menu, updateData, baserepo.WithDB[*baserepo.UpdateConfig](tx)); err != nil {
+			if err := s.repo.Updates(ctx, page, updateData, baserepo.WithDB[*baserepo.UpdateConfig](tx)); err != nil {
 				return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("同步菜单失败"))
 			}
-			delete(menuMap, item.Path)
+			delete(pageMap, node.Path)
 		} else {
-			menu = &RbacMenu{
-				Type:      item.Type,
-				Name:      item.Name,
-				Path:      item.Path,
-				IsPage:    item.IsPage,
-				ModuleKey: item.ModuleKey,
+			stats.created++
+			page = &RbacMenu{
+				Type:      10,
+				Name:      node.Name,
+				Path:      node.Path,
+				IsPage:    1,
+				ModuleKey: node.ModuleKey,
 				ParentId:  parentId,
-				Sort:      item.Sort,
+				Sort:      node.Sort,
 			}
-			if err := s.repo.Create(ctx, menu, baserepo.WithDB[*baserepo.CreateConfig](tx)); err != nil {
+			if err := s.repo.Create(ctx, page, baserepo.WithDB[*baserepo.CreateConfig](tx)); err != nil {
 				return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("同步菜单失败"))
 			}
 		}
-		if len(item.Children) > 0 {
-			if err := s.SyncMenuList(ctx, item.Children, menu.ID, menuMap, tx); err != nil {
+
+		// 同步操作菜单，module_key 强制取父页面菜单的
+		if err := s.syncActionList(ctx, node.Actions, page, actionIdx, stats, tx); err != nil {
+			return err
+		}
+
+		if len(node.Children) > 0 {
+			if err := s.syncPageList(ctx, node.Children, page.ID, pageMap, actionIdx, stats, tx); err != nil {
 				return err
 			}
 		}
 	}
 	return nil
+}
+
+// syncActionList 同步页面下的操作菜单
+func (s *RbacMenuService) syncActionList(ctx context.Context, reqs []RbacMenuActionSyncRequest, page *RbacMenu, actionIdx map[uint32]map[string]*RbacMenu, stats *syncStats, tx *gorm.DB) error {
+	idx := actionIdx[page.ID]
+	if idx == nil {
+		idx = make(map[string]*RbacMenu)
+		actionIdx[page.ID] = idx
+	}
+
+	for _, req := range reqs {
+		action, exists := idx[req.ActionMark]
+		if exists {
+			stats.updated++
+			updateData := map[string]any{
+				"name":       req.Name,
+				"module_key": page.ModuleKey,
+			}
+			if err := s.repo.Updates(ctx, action, updateData, baserepo.WithDB[*baserepo.UpdateConfig](tx)); err != nil {
+				return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("同步菜单失败"))
+			}
+			delete(idx, req.ActionMark)
+		} else {
+			stats.created++
+			action = &RbacMenu{
+				Type:       20,
+				Name:       req.Name,
+				ActionMark: req.ActionMark,
+				ModuleKey:  page.ModuleKey,
+				IsPage:     0,
+				ParentId:   page.ID,
+			}
+			if err := s.repo.Create(ctx, action, baserepo.WithDB[*baserepo.CreateConfig](tx)); err != nil {
+				return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("同步菜单失败"))
+			}
+		}
+	}
+
+	// 删除该页面下数据源未包含的操作菜单
+	return s.deleteActionList(ctx, idx, stats, tx)
+}
+
+// deleteActionList 删除操作菜单列表
+func (s *RbacMenuService) deleteActionList(ctx context.Context, actions map[string]*RbacMenu, stats *syncStats, tx *gorm.DB) error {
+	for mark, action := range actions {
+		if err := s.repo.Delete(ctx, action.ID, baserepo.WithDB[*baserepo.DeleteConfig](tx)); err != nil {
+			return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("同步菜单失败"))
+		}
+		stats.deleted++
+		delete(actions, mark)
+	}
+	return nil
+}
+
+// maxMenuSyncDepth 菜单同步最大层级深度
+const maxMenuSyncDepth = 20
+
+// validateSyncReq 校验同步请求: 页面path全局唯一、同页面内action_mark唯一、层级不超限
+func validateSyncReq(nodes []RbacMenuSyncRequest) error {
+	pagePaths := make(map[string]bool)
+	var walk func([]RbacMenuSyncRequest, int) error
+	walk = func(list []RbacMenuSyncRequest, depth int) error {
+		if depth > maxMenuSyncDepth {
+			return apperror.New(errcode.InvalidInput, apperror.WithMsg("菜单层级过深"))
+		}
+		for _, node := range list {
+			if pagePaths[node.Path] {
+				return apperror.New(errcode.InvalidInput, apperror.WithMsg("页面路径重复"))
+			}
+			pagePaths[node.Path] = true
+
+			marks := make(map[string]bool)
+			for _, action := range node.Actions {
+				if marks[action.ActionMark] {
+					return apperror.New(errcode.InvalidInput, apperror.WithMsg("操作标识重复"))
+				}
+				marks[action.ActionMark] = true
+			}
+			if err := walk(node.Children, depth+1); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	return walk(nodes, 1)
 }
 
 // checkName 检查菜单名称
@@ -453,7 +587,7 @@ func (s *RbacMenuService) FindApiList(ctx context.Context, req *RbacMenuApiListR
 
 // SaveApiList 保存菜单权限
 func (s *RbacMenuService) SaveApiList(ctx context.Context, req *RbacMenuApiSaveRequest) error {
-	return s.Db.Transaction(func(tx *gorm.DB) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
 		filter := &RbacMenuApiFilterField{MenuId: req.MenuID}
 		list, err := s.apiRepo.FindAll(ctx, filter, nil, nil,
 			baserepo.WithDB[*baserepo.QueryConfig](tx),

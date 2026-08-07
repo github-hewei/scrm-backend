@@ -24,6 +24,48 @@ schemas:
         type: integer
         description: 当日数量
 
+  RbacMenuSyncNode:
+    type: object
+    required:
+      - name
+      - path
+    properties:
+      name:
+        type: string
+        description: 菜单名称(对应title)
+      path:
+        type: string
+        description: 页面路径(全局唯一，作为身份标识)
+      module_key:
+        type: string
+        description: 功能模块key
+      sort:
+        type: integer
+        description: 排序
+      children:
+        type: array
+        description: 子页面菜单
+        items:
+          $ref: '#/schemas/RbacMenuSyncNode'
+      actions:
+        type: array
+        description: 操作菜单(可出现在任意层级)
+        items:
+          $ref: '#/schemas/RbacMenuActionSync'
+
+  RbacMenuActionSync:
+    type: object
+    required:
+      - name
+      - action_mark
+    properties:
+      name:
+        type: string
+        description: 操作名称
+      action_mark:
+        type: string
+        description: 操作标识(页面内唯一)
+
   PlatformLoginRequest:
     type: object
     required:

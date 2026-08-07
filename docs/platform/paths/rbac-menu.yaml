@@ -176,7 +176,7 @@
     tags:
       - RBAC-菜单管理
     summary: 同步菜单
-    description: 同步菜单结构（包括子菜单）
+    description: 全量对账同步菜单(页面+操作)。以数据源为准：已存在按path/action_mark匹配更新，新增写入，数据源未包含的存量菜单删除。页面type=10、操作type=20由服务端派生，操作菜单module_key取父页面。数据源未包含的页面及其操作菜单将被删除。
     operationId: syncMenu
     security:
       - BearerAuth: []
@@ -185,45 +185,10 @@
       content:
         application/json:
           schema:
-            type: object
-            required:
-              - name
-              - type
-              - path
-            properties:
-              name:
-                type: string
-              type:
-                type: integer
-              parent_id:
-                type: integer
-              path:
-                type: string
-              is_page:
-                type: integer
-              module_key:
-                type: string
-              sort:
-                type: integer
-              children:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    name:
-                      type: string
-                    type:
-                      type: integer
-                    parent_id:
-                      type: integer
-                    path:
-                      type: string
-                    is_page:
-                      type: integer
-                    module_key:
-                      type: string
-                    sort:
-                      type: integer
+            type: array
+            description: 页面菜单树(以数据源为准全量对账)
+            items:
+              $ref: '../schemas.yaml#/schemas/RbacMenuSyncNode'
     responses:
       '200':
         description: 成功
