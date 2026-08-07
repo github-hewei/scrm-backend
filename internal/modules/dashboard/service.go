@@ -123,7 +123,7 @@ func (s *Service) countDaily(ctx context.Context, table string, since int64) ([]
 
 	start := time.Unix(since, 0)
 	result := make([]DailyCount, 0, trendDays)
-	for i := 0; i < trendDays; i++ {
+	for i := range trendDays {
 		date := start.AddDate(0, 0, i).Format("2006-01-02")
 		result = append(result, DailyCount{Date: date, Count: countMap[date]})
 	}
