@@ -906,6 +906,9 @@ func (s *RbacStoreService) FindList(ctx context.Context, req *RbacStoreListReque
 // defaultSuperRoleName 企业默认超管角色名称
 const defaultSuperRoleName = "超级管理员"
 
+// defaultSuperUserName 企业默认超管用户姓名
+const defaultSuperUserName = "超级管理员"
+
 // Create 创建企业并初始化默认超管账号
 func (s *RbacStoreService) Create(ctx context.Context, req *RbacStoreCreateRequest) (*RbacStoreCreateResponse, error) {
 	if err := s.checkName(ctx, req.Name); err != nil {
@@ -999,7 +1002,7 @@ func (s *RbacStoreService) createSuperRole(ctx context.Context, tx *gorm.DB, sto
 func (s *RbacStoreService) createSuperUser(ctx context.Context, tx *gorm.DB, storeId uint32, username, hashedPassword string) (*RbacUser, error) {
 	item := &RbacUser{
 		Username: username,
-		RealName: username,
+		RealName: defaultSuperUserName,
 		Password: hashedPassword,
 		IsSuper:  1,
 		StoreId:  storeId,
