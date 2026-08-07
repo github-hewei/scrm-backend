@@ -223,7 +223,7 @@ func (r *SyncApiRunner) ensureParentCategory(ctx context.Context, tag string) (u
 
 	api := &rbac.RbacApi{
 		Name:     tag,
-		Url:      "-",
+		Url:      rbac.APICategoryMarker,
 		ParentId: 0,
 		Sort:     100,
 	}

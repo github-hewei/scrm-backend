@@ -886,11 +886,12 @@ func (s *RbacRoleService) checkParent(ctx context.Context, parentId uint32, Stor
 // RbacApiService 接口服务
 type RbacApiService struct {
 	repo *RbacApiRepository
+	db   *gorm.DB
 }
 
 // NewRbacApiService 创建接口服务
-func NewRbacApiService(repo *RbacApiRepository) *RbacApiService {
-	return &RbacApiService{repo: repo}
+func NewRbacApiService(repo *RbacApiRepository, db *gorm.DB) *RbacApiService {
+	return &RbacApiService{repo: repo, db: db}
 }
 
 // FindTreeList 获取接口树列表
@@ -979,6 +980,143 @@ func (s *RbacApiService) checkName(ctx context.Context, name string) error {
 		return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("检查接口名称失败"))
 	}
 	return apperror.New(errcode.Conflict, apperror.WithMsg("接口名已存在"))
+}
+
+// APICategoryMarker 接口父级分组目录的URL标记
+const APICategoryMarker = "-"
+
+// Sync 同步接口(以数据源为准全量对账)
+func (s *RbacApiService) Sync(ctx context.Context, req []RbacApiSyncRequest) error {
+	if err := validateApiSyncReq(req); err != nil {
+		return err
+	}
+
+	stats := &syncStats{}
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		list, err := s.repo.FindAll(ctx, nil, nil, nil,
+			baserepo.WithDB[*baserepo.QueryConfig](tx),
+			baserepo.WithScopes(nil),
+		)
+		if err != nil {
+			return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("同步接口失败"))
+		}
+
+		apiMap := make(map[string]*RbacApi)
+		categoryMap := make(map[string]*RbacApi)
+		for _, api := range list {
+			if api.Url == APICategoryMarker {
+				categoryMap[api.Name] = api
+			} else {
+				apiMap[api.Url] = api
+			}
+		}
+
+		// 收集请求中引用的分组，清理时跳过
+		usedCategories := make(map[string]bool, len(req))
+		for _, item := range req {
+			usedCategories[item.Category] = true
+		}
+
+		for _, item := range req {
+			category, err := s.ensureCategory(ctx, item.Category, categoryMap, tx)
+			if err != nil {
+				return err
+			}
+			if err := s.syncSingleAPI(ctx, item, category.ID, apiMap, stats, tx); err != nil {
+				return err
+			}
+		}
+
+		// 清理: 数据源未包含的接口，以及未被请求引用的父目录
+		for _, api := range apiMap {
+			if err := s.repo.Delete(ctx, api.ID, baserepo.WithDB[*baserepo.DeleteConfig](tx)); err != nil {
+				return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("同步接口失败"))
+			}
+			stats.deleted++
+		}
+		for _, category := range categoryMap {
+			if usedCategories[category.Name] {
+				continue
+			}
+			if err := s.repo.Delete(ctx, category.ID, baserepo.WithDB[*baserepo.DeleteConfig](tx)); err != nil {
+				return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("同步接口失败"))
+			}
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	logger.Ctx(ctx).Info("同步接口完成",
+		"created", stats.created,
+		"updated", stats.updated,
+		"deleted", stats.deleted,
+	)
+	return nil
+}
+
+// ensureCategory 确保父目录存在，返回父目录
+func (s *RbacApiService) ensureCategory(ctx context.Context, name string, categoryMap map[string]*RbacApi, tx *gorm.DB) (*RbacApi, error) {
+	if category, exists := categoryMap[name]; exists {
+		return category, nil
+	}
+
+	category := &RbacApi{
+		Name:     name,
+		Url:      APICategoryMarker,
+		ParentId: 0,
+		Sort:     100,
+	}
+	if err := s.repo.Create(ctx, category, baserepo.WithDB[*baserepo.CreateConfig](tx)); err != nil {
+		return nil, apperror.Wrap(errcode.Internal, err, apperror.WithMsg("同步接口失败"))
+	}
+	categoryMap[name] = category
+	return category, nil
+}
+
+// syncSingleAPI 同步单个接口
+func (s *RbacApiService) syncSingleAPI(ctx context.Context, item RbacApiSyncRequest, parentId uint32, apiMap map[string]*RbacApi, stats *syncStats, tx *gorm.DB) error {
+	api, exists := apiMap[item.Url]
+	if exists {
+		// 命中即从待清理集合移除(跳过也需移除，否则会被清理阶段误删)
+		delete(apiMap, item.Url)
+		if api.Name == item.Name && api.ParentId == parentId {
+			return nil
+		}
+		stats.updated++
+		updateData := map[string]any{
+			"name":      item.Name,
+			"parent_id": parentId,
+		}
+		if err := s.repo.Updates(ctx, api, updateData, baserepo.WithDB[*baserepo.UpdateConfig](tx)); err != nil {
+			return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("同步接口失败"))
+		}
+		return nil
+	}
+
+	stats.created++
+	api = &RbacApi{
+		Name:     item.Name,
+		Url:      item.Url,
+		ParentId: parentId,
+		Sort:     100,
+	}
+	if err := s.repo.Create(ctx, api, baserepo.WithDB[*baserepo.CreateConfig](tx)); err != nil {
+		return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("同步接口失败"))
+	}
+	return nil
+}
+
+// validateApiSyncReq 校验同步请求: url 全局唯一
+func validateApiSyncReq(req []RbacApiSyncRequest) error {
+	urls := make(map[string]bool)
+	for _, item := range req {
+		if urls[item.Url] {
+			return apperror.New(errcode.InvalidInput, apperror.WithMsg("接口路径重复"))
+		}
+		urls[item.Url] = true
+	}
+	return nil
 }
 
 // RbacStoreService 企业服务

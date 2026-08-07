@@ -68,6 +68,8 @@ paths:
     $ref: './paths/rbac-api.yaml#/~1rbac~1api~1update'
   /rbac/api/delete:
     $ref: './paths/rbac-api.yaml#/~1rbac~1api~1delete'
+  /rbac/api/sync:
+    $ref: './paths/rbac-api.yaml#/~1rbac~1api~1sync'
 
   /rbac/role/list:
     $ref: './paths/rbac-role.yaml#/~1rbac~1role~1list'

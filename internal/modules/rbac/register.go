@@ -27,7 +27,7 @@ func buildAll(db *gorm.DB, binder *bind.Binder, config Config, rdb *redis.Client
 
 	authMid := NewAuthMiddleware(config, authServ)
 	menuServ := NewRbacMenuService(menuRepo, menuApiRepo, db)
-	apiServ := NewRbacApiService(apiRepo)
+	apiServ := NewRbacApiService(apiRepo, db)
 	roleServ := NewRbacRoleService(roleRepo, roleMenuRepo, db)
 	userServ := NewRbacUserService(db, userRepo, userRoleRepo, roleRepo)
 	storeServ := NewRbacStoreService(db, storeRepo, userRepo, roleRepo, userRoleRepo, roleMenuRepo, menuRepo)
@@ -82,6 +82,7 @@ func RegisterPlatform(r *gin.RouterGroup, db *gorm.DB, binder *bind.Binder, conf
 	r.POST("/rbac/api/create", h.apiCreate)
 	r.POST("/rbac/api/update", h.apiUpdate)
 	r.POST("/rbac/api/delete", h.apiDelete)
+	r.POST("/rbac/api/sync", h.apiSync)
 
 	r.POST("/rbac/store/list", h.storeList)
 	r.POST("/rbac/store/create", h.storeCreate)

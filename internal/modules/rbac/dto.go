@@ -86,6 +86,13 @@ type RbacApiDeleteRequest struct {
 	ID uint32 `json:"id" validate:"required"`
 }
 
+// RbacApiSyncRequest 同步接口请求参数
+type RbacApiSyncRequest struct {
+	Name     string `json:"name" validate:"required,min=2,max=50"`
+	Url      string `json:"url" validate:"required"`
+	Category string `json:"category" validate:"required,min=2,max=50"`
+}
+
 // RbacStoreListRequest 获取企业列表请求参数
 type RbacStoreListRequest struct {
 	Page      int    `json:"page" validate:"required,min=1"`

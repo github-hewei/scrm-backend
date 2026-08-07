@@ -139,3 +139,43 @@
           application/json:
             schema:
               $ref: '../schemas.yaml#/schemas/CommonResponse'
+
+/rbac/api/sync:
+  post:
+    tags:
+      - RBAC-接口管理
+    summary: 同步接口
+    description: 全量对账同步接口(以数据源为准)：已存在按url匹配更新，新增写入，数据源未包含的存量接口及其父级分组删除。接口按category归入对应父级分组(不存在自动创建)。
+    operationId: syncApi
+    security:
+      - BearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: array
+            description: 接口列表
+            items:
+              type: object
+              required:
+                - name
+                - url
+                - category
+              properties:
+                name:
+                  type: string
+                  description: 接口名称
+                url:
+                  type: string
+                  description: 接口路径(全局唯一，作为身份标识)
+                category:
+                  type: string
+                  description: 父级分组名称
+    responses:
+      '200':
+        description: 成功
+        content:
+          application/json:
+            schema:
+              $ref: '../schemas.yaml#/schemas/CommonResponse'

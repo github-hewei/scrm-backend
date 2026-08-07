@@ -47,6 +47,7 @@
 | RBAC-接口管理 | `/rbac/api/create` | 创建接口 | 超管、运营 |
 | RBAC-接口管理 | `/rbac/api/update` | 更新接口 | 超管、运营 |
 | RBAC-接口管理 | `/rbac/api/delete` | 删除接口 | 超管、运营 |
+| RBAC-接口管理 | `/rbac/api/sync` | 全量同步接口 | 超管、运营 |
 | RBAC-角色管理 | `/rbac/role/list` | 角色列表(平铺，仅超管角色) | 超管、运营 |
 | RBAC-角色管理 | `/rbac/role/create` | 创建角色 | 超管、运营 |
 | RBAC-角色管理 | `/rbac/role/update` | 更新角色 | 超管、运营 |

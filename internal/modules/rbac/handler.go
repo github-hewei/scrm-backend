@@ -250,6 +250,20 @@ func (h *handler) apiUpdate(ctx *gin.Context) {
 	response.Success(ctx, "保存成功", nil)
 }
 
+// apiSync 同步接口
+func (h *handler) apiSync(ctx *gin.Context) {
+	req := []RbacApiSyncRequest{}
+	if err := h.binder.ShouldBindJSONArray(ctx, &req); err != nil {
+		response.Error(ctx, err)
+		return
+	}
+	if err := h.apiServ.Sync(ctx.Request.Context(), req); err != nil {
+		response.Error(ctx, err)
+		return
+	}
+	response.Success(ctx, "同步成功", nil)
+}
+
 // apiDelete 删除接口
 func (h *handler) apiDelete(ctx *gin.Context) {
 	req := &RbacApiDeleteRequest{}

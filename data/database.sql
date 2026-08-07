@@ -306,4 +306,5 @@ CREATE TABLE `gaz_platform_user` (
 
 -- [CHECK POINT] --
 
+-- 默认密码: 123456
 INSERT INTO `gaz_platform_user` (`id`, `username`, `password`, `real_name`, `avatar_id`, `role`, `status`, `last_login_time`, `last_login_ip`, `created_at`, `updated_at`, `deleted_at`) VALUES (10000, 'admin', '$2a$10$VGD3YIumqH75.6Ma6KE58.M2cEtbPQDXG9PN/r2pPU.Pi75jVUoHa', '超级管理员', 0, 0, 1, 0, '', 0, 1786106474, 0);
