@@ -69,6 +69,7 @@ CREATE TABLE `gaz_rbac_role` (
   `role_name` varchar(50) NOT NULL DEFAULT '' COMMENT '角色名称',
   `parent_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '父级角色ID',
   `sort` int(11) unsigned NOT NULL DEFAULT '100' COMMENT '排序(数字越小越靠前)',
+  `is_super` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT '是否为超级管理员角色',
   `store_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '企业ID',
   `created_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间',
   `updated_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '更新时间',
@@ -85,6 +86,7 @@ CREATE TABLE `gaz_rbac_user_role` (
   `store_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '企业ID',
   `created_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间',
   PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_username` (`username`),
   KEY `user_id` (`user_id`),
   KEY `role_id` (`role_id`),
   KEY `store_id` (`store_id`)
@@ -304,8 +306,4 @@ CREATE TABLE `gaz_platform_user` (
 
 -- [CHECK POINT] --
 
-ALTER TABLE `gaz_rbac_role`
-ADD COLUMN `is_super` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT '是否为超级管理员角色';
-
--- [CHECK POINT] --
-ALTER TABLE `gaz_rbac_user` ADD UNIQUE KEY `idx_username` (`username`);
+INSERT INTO `gaz_platform_user` (`id`, `username`, `password`, `real_name`, `avatar_id`, `role`, `status`, `last_login_time`, `last_login_ip`, `created_at`, `updated_at`, `deleted_at`) VALUES (10000, 'admin', '$2a$10$VGD3YIumqH75.6Ma6KE58.M2cEtbPQDXG9PN/r2pPU.Pi75jVUoHa', '超级管理员', 0, 0, 1, 0, '', 0, 1786106474, 0);
