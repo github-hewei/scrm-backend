@@ -860,9 +860,12 @@ func (s *RbacRoleService) checkName(ctx context.Context, name string, StoreId ui
 func (s *RbacRoleService) checkSuperUnique(ctx context.Context, storeId uint32, excludeID uint32) error {
 	superRole, err := s.repo.FindSuper(ctx, storeId)
 	if err != nil {
+		if errors.Is(err, baserepo.ErrRecordNotFound) {
+			return nil
+		}
 		return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("检查超管角色失败"))
 	}
-	if superRole.ID != 0 && superRole.ID != excludeID {
+	if superRole.ID != excludeID {
 		return apperror.New(errcode.Conflict, apperror.WithMsg("该企业已存在超管角色"))
 	}
 	return nil

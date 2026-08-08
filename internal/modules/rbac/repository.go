@@ -203,7 +203,10 @@ func NewRbacRoleRepository(db *gorm.DB) *RbacRoleRepository {
 func (r *RbacRoleRepository) FindByName(ctx context.Context, name string, StoreId uint32) (*RbacRole, error) {
 	item := &RbacRole{}
 	err := r.Db.WithContext(ctx).Where("role_name = ? AND store_id = ?", name, StoreId).First(&item).Error
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, baserepo.ErrRecordNotFound
+		}
 		return nil, err
 	}
 	return item, nil
@@ -213,7 +216,10 @@ func (r *RbacRoleRepository) FindByName(ctx context.Context, name string, StoreI
 func (r *RbacRoleRepository) FindSuper(ctx context.Context, StoreId uint32) (*RbacRole, error) {
 	item := &RbacRole{}
 	err := r.Db.WithContext(ctx).Where("is_super = 1 AND store_id = ?", StoreId).First(&item).Error
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, baserepo.ErrRecordNotFound
+		}
 		return nil, err
 	}
 	return item, nil
