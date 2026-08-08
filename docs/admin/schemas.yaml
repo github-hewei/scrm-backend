@@ -17,6 +17,16 @@ schemas:
         type: string
         description: 追踪ID
 
+  DailyCount:
+    type: object
+    properties:
+      date:
+        type: string
+        description: 日期(YYYY-MM-DD)
+      count:
+        type: integer
+        description: 当日数量
+
   AuthLoginRequest:
     type: object
     required:

@@ -1,0 +1,62 @@
+/dashboard/stats:
+  post:
+    tags:
+      - 仪表盘
+    summary: 获取企业数据面板统计
+    description: 返回当前企业的核心指标(会员/文章/文件)与近30天每日新增趋势，数据范围自动限定当前企业。
+    operationId: getStoreDashboardStats
+    security:
+      - BearerAuth: []
+    responses:
+      '200':
+        description: 成功
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                errcode:
+                  type: integer
+                message:
+                  type: string
+                data:
+                  type: object
+                  properties:
+                    overview:
+                      type: object
+                      description: 核心指标
+                      properties:
+                        member_total:
+                          type: integer
+                          description: 会员总数
+                        member_monthly_new:
+                          type: integer
+                          description: 本月新增会员
+                        article_total:
+                          type: integer
+                          description: 文章总数
+                        article_monthly_new:
+                          type: integer
+                          description: 本月新增文章
+                        file_total:
+                          type: integer
+                          description: 文件总数
+                        file_total_size:
+                          type: integer
+                          description: 文件总存储占用(字节)
+                    trends:
+                      type: object
+                      description: 近30天每日新增趋势
+                      properties:
+                        member:
+                          type: array
+                          items:
+                            $ref: '../schemas.yaml#/schemas/DailyCount'
+                        article:
+                          type: array
+                          items:
+                            $ref: '../schemas.yaml#/schemas/DailyCount'
+                        file:
+                          type: array
+                          items:
+                            $ref: '../schemas.yaml#/schemas/DailyCount'

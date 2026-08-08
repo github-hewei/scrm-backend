@@ -5,6 +5,7 @@ import (
 
 	"zero-backend/internal/modules/article"
 	"zero-backend/internal/modules/captcha"
+	"zero-backend/internal/modules/dashboard"
 	"zero-backend/internal/modules/health"
 	"zero-backend/internal/modules/rbac"
 	"zero-backend/internal/modules/region"
@@ -49,6 +50,7 @@ func NewGin(
 
 	settingSvc := provider.NewSettingService(db)
 	upload.RegisterAdmin(protected, db, binder, settingSvc)
+	dashboard.RegisterAdmin(protected, db)
 
 	health.Register(r)
 

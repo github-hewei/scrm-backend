@@ -27,3 +27,26 @@ type StatsResponse struct {
 	Overview OverviewStats `json:"overview"`
 	Trends   TrendStats    `json:"trends"`
 }
+
+// StoreOverviewStats 企业核心指标
+type StoreOverviewStats struct {
+	MemberTotal       int64 `json:"member_total"`        // 会员总数
+	MemberMonthlyNew  int64 `json:"member_monthly_new"`  // 本月新增会员
+	ArticleTotal      int64 `json:"article_total"`       // 文章总数
+	ArticleMonthlyNew int64 `json:"article_monthly_new"` // 本月新增文章
+	FileTotal         int64 `json:"file_total"`          // 文件总数
+	FileTotalSize     int64 `json:"file_total_size"`     // 文件总存储占用(字节)
+}
+
+// StoreTrendStats 企业近30天每日新增趋势
+type StoreTrendStats struct {
+	Member  []DailyCount `json:"member"`  // 会员新增趋势
+	Article []DailyCount `json:"article"` // 文章新增趋势
+	File    []DailyCount `json:"file"`    // 文件上传趋势
+}
+
+// StoreStatsResponse 企业仪表盘统计响应
+type StoreStatsResponse struct {
+	Overview StoreOverviewStats `json:"overview"`
+	Trends   StoreTrendStats    `json:"trends"`
+}
