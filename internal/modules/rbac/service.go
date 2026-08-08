@@ -8,6 +8,7 @@ import (
 	"github.com/241x/zero-kit/baserepo"
 	"github.com/241x/zero-kit/helper"
 	"github.com/241x/zero-kit/logger"
+	"github.com/241x/zero-web/ctxkeys"
 	"github.com/241x/zero-web/errcode"
 	"gorm.io/gorm"
 )
@@ -103,6 +104,9 @@ func (s *RbacUserService) Update(ctx context.Context, req *RbacUserUpdateRequest
 	if item.StoreId != req.StoreId {
 		return apperror.New(errcode.NotFound, apperror.WithMsg("用户不存在"))
 	}
+	if err := s.checkEditableUser(ctx, item); err != nil {
+		return err
+	}
 	if item.Username != req.Username {
 		if err := s.checkUsername(ctx, req.Username); err != nil {
 			return err
@@ -135,6 +139,9 @@ func (s *RbacUserService) Delete(ctx context.Context, req *RbacUserDeleteRequest
 	if item.StoreId != req.StoreId {
 		return apperror.New(errcode.NotFound)
 	}
+	if err := s.checkEditableUser(ctx, item); err != nil {
+		return err
+	}
 
 	if err := s.repo.Delete(ctx, item.ID); err != nil {
 		return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("删除用户失败"))
@@ -154,6 +161,9 @@ func (s *RbacUserService) SetRoles(ctx context.Context, req *RbacUserRoleSetRequ
 		}
 		if user.StoreId != req.StoreId {
 			return apperror.New(errcode.NotFound, apperror.WithMsg("用户不存在"))
+		}
+		if err := s.checkEditableUser(ctx, user); err != nil {
+			return err
 		}
 
 		for _, roleID := range req.RoleIDs {
@@ -233,6 +243,17 @@ func (s *RbacUserService) checkUsername(ctx context.Context, username string) er
 	return apperror.New(errcode.Conflict, apperror.WithMsg("用户名已存在"))
 }
 
+// checkEditableUser 企业端超管用户只读校验
+func (s *RbacUserService) checkEditableUser(ctx context.Context, user *RbacUser) error {
+	if !isEnterpriseRequest(ctx) {
+		return nil
+	}
+	if user.IsSuper == 1 {
+		return apperror.New(errcode.Forbidden, apperror.WithMsg("超管用户仅平台端可管理"))
+	}
+	return nil
+}
+
 // ResetPassword 重置用户密码
 func (s *RbacUserService) ResetPassword(ctx context.Context, req *RbacUserResetPasswordRequest) (string, error) {
 	user, err := s.repo.FindOne(ctx, req.ID, baserepo.WithScopes(nil))
@@ -244,6 +265,9 @@ func (s *RbacUserService) ResetPassword(ctx context.Context, req *RbacUserResetP
 	}
 	if user.StoreId != req.StoreId {
 		return "", apperror.New(errcode.NotFound, apperror.WithMsg("用户不存在"))
+	}
+	if err := s.checkEditableUser(ctx, user); err != nil {
+		return "", err
 	}
 
 	newPassword := helper.RandomStringWithSymbols(12)
@@ -630,15 +654,16 @@ type RbacRoleService struct {
 	db           *gorm.DB
 	repo         *RbacRoleRepository
 	roleMenuRepo *RbacRoleMenuRepository
+	userRoleRepo *RbacUserRoleRepository
 }
 
 // NewRbacRoleService 创建角色服务
-func NewRbacRoleService(repo *RbacRoleRepository, roleMenuRepo *RbacRoleMenuRepository, db *gorm.DB) *RbacRoleService {
-	return &RbacRoleService{db: db, repo: repo, roleMenuRepo: roleMenuRepo}
+func NewRbacRoleService(repo *RbacRoleRepository, roleMenuRepo *RbacRoleMenuRepository, userRoleRepo *RbacUserRoleRepository, db *gorm.DB) *RbacRoleService {
+	return &RbacRoleService{db: db, repo: repo, roleMenuRepo: roleMenuRepo, userRoleRepo: userRoleRepo}
 }
 
-// FindTreeList 获取角色树形列表
-func (s *RbacRoleService) FindTreeList(ctx context.Context, req *RbacRoleListRequest) ([]*RbacRole, error) {
+// FindAll 获取角色平铺列表(企业端使用，不分页)
+func (s *RbacRoleService) FindAll(ctx context.Context, req *RbacRoleListRequest) ([]*RbacRole, error) {
 	filter := &RbacRoleFilterField{
 		StoreId:  req.StoreId,
 		RoleName: req.RoleName,
@@ -650,13 +675,6 @@ func (s *RbacRoleService) FindTreeList(ctx context.Context, req *RbacRoleListReq
 	)
 	if err != nil {
 		return nil, apperror.Wrap(errcode.Internal, err, apperror.WithMsg("获取角色列表失败"))
-	}
-	if len(list) > 0 {
-		rbacRoleList := RbacRoleList{}
-		for _, role := range list {
-			rbacRoleList = append(rbacRoleList, role)
-		}
-		list = rbacRoleList.Tree()
 	}
 	return list, nil
 }
@@ -710,14 +728,8 @@ func (s *RbacRoleService) Create(ctx context.Context, req *RbacRoleCreateRequest
 			return err
 		}
 	}
-	if req.ParentId > 0 {
-		if err := s.checkParent(ctx, req.ParentId, req.StoreId); err != nil {
-			return err
-		}
-	}
 	item := &RbacRole{
 		RoleName: req.RoleName,
-		ParentId: req.ParentId,
 		Sort:     req.Sort,
 		StoreId:  req.StoreId,
 		IsSuper:  req.IsSuper,
@@ -740,6 +752,9 @@ func (s *RbacRoleService) Update(ctx context.Context, req *RbacRoleUpdateRequest
 	if item.StoreId != req.StoreId {
 		return apperror.New(errcode.NotFound)
 	}
+	if err := s.checkEditableRole(ctx, item); err != nil {
+		return err
+	}
 	if item.RoleName != req.RoleName {
 		if err := s.checkName(ctx, req.RoleName, req.StoreId); err != nil {
 			return err
@@ -753,7 +768,6 @@ func (s *RbacRoleService) Update(ctx context.Context, req *RbacRoleUpdateRequest
 
 	updateData := map[string]any{
 		"role_name": req.RoleName,
-		"parent_id": req.ParentId,
 		"sort":      req.Sort,
 		"store_id":  req.StoreId,
 		"is_super":  req.IsSuper,
@@ -776,6 +790,9 @@ func (s *RbacRoleService) Delete(ctx context.Context, req *RbacRoleDeleteRequest
 	if item.StoreId != req.StoreId {
 		return apperror.New(errcode.NotFound)
 	}
+	if err := s.checkEditableRole(ctx, item); err != nil {
+		return err
+	}
 	if err := s.repo.Delete(ctx, item.ID); err != nil {
 		return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("删除角色失败"))
 	}
@@ -795,6 +812,9 @@ func (s *RbacRoleService) SetMenus(ctx context.Context, req *RbacRoleMenuSetRequ
 		if role.StoreId != req.StoreId {
 			return apperror.New(errcode.NotFound, apperror.WithMsg("角色不存在"))
 		}
+		if err := s.checkEditableRole(ctx, role); err != nil {
+			return err
+		}
 
 		filter := &RbacRoleMenuFilterField{RoleId: role.ID}
 		existingMenus, err := s.roleMenuRepo.FindAll(ctx, filter, nil, nil,
@@ -813,6 +833,24 @@ func (s *RbacRoleService) SetMenus(ctx context.Context, req *RbacRoleMenuSetRequ
 		newMap := make(map[uint32]bool)
 		for _, id := range req.MenuIDs {
 			newMap[id] = true
+		}
+
+		if isEnterpriseRequest(ctx) {
+			// 企业端: 仅可授予自己拥有的菜单，未拥有的现有菜单保留
+			owned, err := s.ownedMenuIDs(ctx, tx)
+			if err != nil {
+				return err
+			}
+			for id := range newMap {
+				if !owned[id] {
+					return apperror.New(errcode.Forbidden, apperror.WithMsg("不能授予未拥有的菜单权限"))
+				}
+			}
+			for _, menu := range existingMenus {
+				if !owned[menu.MenuId] {
+					newMap[menu.MenuId] = true
+				}
+			}
 		}
 
 		deleteIds := make([]uint32, 0)
@@ -844,6 +882,62 @@ func (s *RbacRoleService) SetMenus(ctx context.Context, req *RbacRoleMenuSetRequ
 	})
 }
 
+// currentUser 获取当前请求上下文中的登录用户(企业端请求由LoadUser注入，平台端无)
+func currentUser(ctx context.Context) *RbacUser {
+	user, ok := ctxkeys.User(ctx).(*RbacUser)
+	if !ok {
+		return nil
+	}
+	return user
+}
+
+// isEnterpriseRequest 是否为企业端请求
+func isEnterpriseRequest(ctx context.Context) bool {
+	return currentUser(ctx) != nil
+}
+
+// checkEditableRole 企业端超管角色只读校验
+func (s *RbacRoleService) checkEditableRole(ctx context.Context, role *RbacRole) error {
+	if !isEnterpriseRequest(ctx) {
+		return nil
+	}
+	if role.IsSuper == 1 {
+		return apperror.New(errcode.Forbidden, apperror.WithMsg("超管角色仅平台端可管理"))
+	}
+	return nil
+}
+
+// ownedMenuIDs 当前用户(所有绑定角色)拥有的菜单集合
+func (s *RbacRoleService) ownedMenuIDs(ctx context.Context, tx *gorm.DB) (map[uint32]bool, error) {
+	owned := make(map[uint32]bool)
+	user := currentUser(ctx)
+	if user == nil {
+		return owned, nil
+	}
+
+	userRoles, err := s.userRoleRepo.FindAll(ctx, &RbacUserRoleFilterField{UserId: user.ID}, nil, nil,
+		baserepo.WithDB[*baserepo.QueryConfig](tx),
+		baserepo.WithScopes(nil),
+	)
+	if err != nil {
+		return nil, apperror.Wrap(errcode.Internal, err, apperror.WithMsg("获取用户角色失败"))
+	}
+
+	for _, ur := range userRoles {
+		roleMenus, err := s.roleMenuRepo.FindAll(ctx, &RbacRoleMenuFilterField{RoleId: ur.RoleId}, nil, nil,
+			baserepo.WithDB[*baserepo.QueryConfig](tx),
+			baserepo.WithScopes(nil),
+		)
+		if err != nil {
+			return nil, apperror.Wrap(errcode.Internal, err, apperror.WithMsg("获取角色菜单失败"))
+		}
+		for _, rm := range roleMenus {
+			owned[rm.MenuId] = true
+		}
+	}
+	return owned, nil
+}
+
 // checkName 检查角色名称
 func (s *RbacRoleService) checkName(ctx context.Context, name string, StoreId uint32) error {
 	_, err := s.repo.FindByName(ctx, name, StoreId)
@@ -867,21 +961,6 @@ func (s *RbacRoleService) checkSuperUnique(ctx context.Context, storeId uint32, 
 	}
 	if superRole.ID != excludeID {
 		return apperror.New(errcode.Conflict, apperror.WithMsg("该企业已存在超管角色"))
-	}
-	return nil
-}
-
-// checkParent 检查父级角色
-func (s *RbacRoleService) checkParent(ctx context.Context, parentId uint32, StoreId uint32) error {
-	parent, err := s.repo.FindOne(ctx, parentId)
-	if err != nil {
-		if errors.Is(err, baserepo.ErrRecordNotFound) {
-			return apperror.New(errcode.NotFound, apperror.WithMsg("父级角色不存在"))
-		}
-		return apperror.Wrap(errcode.Internal, err, apperror.WithMsg("检查父级角色失败"))
-	}
-	if parent.StoreId != StoreId {
-		return apperror.New(errcode.Forbidden, apperror.WithMsg("父级角色不属于当前企业"))
 	}
 	return nil
 }

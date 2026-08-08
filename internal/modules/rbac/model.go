@@ -98,40 +98,13 @@ type RbacMenuApi struct {
 type RbacRole struct {
 	ID        uint32 `json:"id" gorm:"primaryKey"`
 	RoleName  string `json:"role_name" gorm:"size:50;not null;default:'';comment:角色名称"`
-	ParentId  uint32 `json:"parent_id" gorm:"not null;default:0;comment:父级角色ID"`
 	Sort      uint32 `json:"sort" gorm:"not null;default:100;comment:排序 ( 数字越小越靠前 ) "`
 	IsSuper   int8   `json:"is_super" gorm:"type:tinyint;not null;default:0;comment:是否为超级管理员角色"`
 	StoreId   uint32 `json:"store_id" gorm:"not null;default:0;comment:企业ID;index:store_id"`
 	CreatedAt int64  `json:"created_at" gorm:"not null;comment:创建时间;autoCreateTime"`
 	UpdatedAt int64  `json:"updated_at" gorm:"not null;comment:更新时间;autoUpdateTime"`
 
-	Children     []*RbacRole     `json:"children" gorm:"-"`
 	RbacRoleMenu []*RbacRoleMenu `json:"rbac_role_menu" gorm:"foreignKey:RoleId"`
-}
-
-// RbacRoleList 角色列表
-type RbacRoleList []*RbacRole
-
-// Tree 转换为树形结构
-func (list RbacRoleList) Tree() []*RbacRole {
-	var tree []*RbacRole
-	itemMap := make(map[uint32]*RbacRole)
-
-	for _, item := range list {
-		itemMap[item.ID] = item
-	}
-
-	for _, item := range list {
-		if item.ParentId == 0 {
-			tree = append(tree, item)
-		} else {
-			if parent, ok := itemMap[item.ParentId]; ok {
-				parent.Children = append(parent.Children, item)
-			}
-		}
-	}
-
-	return tree
 }
 
 // RbacRoleMenu 角色关联菜单表模型

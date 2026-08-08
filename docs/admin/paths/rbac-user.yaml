@@ -104,6 +104,7 @@
     tags:
       - RBAC-管理员管理
     summary: 更新管理员
+    description: 更新用户信息。超管用户仅平台端可管理（企业端只读）。
     operationId: updateRbacUser
     security:
       - BearerAuth: []
@@ -147,6 +148,7 @@
     tags:
       - RBAC-管理员管理
     summary: 删除管理员
+    description: 删除用户。超管用户仅平台端可管理（企业端只读）。
     operationId: deleteRbacUser
     security:
       - BearerAuth: []
@@ -178,7 +180,7 @@
     tags:
       - RBAC-管理员管理
     summary: 设置管理员角色
-    description: 为管理员分配角色
+    description: 为管理员分配角色（仅限非超管角色）。超管用户仅平台端可管理（企业端只读）。
     operationId: setUserRoles
     security:
       - BearerAuth: []
@@ -216,6 +218,7 @@
     tags:
       - RBAC-管理员管理
     summary: 重置管理员密码
+    description: 重置用户密码。超管用户仅平台端可管理（企业端只读）。
     operationId: resetUserPassword
     security:
       - BearerAuth: []

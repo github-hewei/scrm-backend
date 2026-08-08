@@ -74,9 +74,6 @@
               role_name:
                 type: string
                 description: 角色名称
-              parent_id:
-                type: integer
-                description: 父级角色ID
               sort:
                 type: integer
                 description: 排序
@@ -116,9 +113,6 @@
               role_name:
                 type: string
                 description: 角色名称
-              parent_id:
-                type: integer
-                description: 父级角色ID
               sort:
                 type: integer
                 description: 排序

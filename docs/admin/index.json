@@ -344,6 +344,7 @@
           "RBAC-角色管理"
         ],
         "summary": "获取角色列表",
+        "description": "获取角色列表（平铺结构，超管角色企业端只读）",
         "operationId": "getRoleList",
         "security": [
           {
@@ -428,10 +429,6 @@
                     "type": "string",
                     "description": "角色名称"
                   },
-                  "parent_id": {
-                    "type": "integer",
-                    "description": "父级角色ID"
-                  },
                   "sort": {
                     "type": "integer",
                     "description": "排序"
@@ -465,6 +462,7 @@
           "RBAC-角色管理"
         ],
         "summary": "更新角色",
+        "description": "更新角色信息。超管角色仅平台端可管理（企业端只读）。",
         "operationId": "updateRole",
         "security": [
           {
@@ -489,10 +487,6 @@
                   "role_name": {
                     "type": "string",
                     "description": "角色名称"
-                  },
-                  "parent_id": {
-                    "type": "integer",
-                    "description": "父级角色ID"
                   },
                   "sort": {
                     "type": "integer",
@@ -527,6 +521,7 @@
           "RBAC-角色管理"
         ],
         "summary": "删除角色",
+        "description": "删除角色。超管角色仅平台端可管理（企业端只读）。",
         "operationId": "deleteRole",
         "security": [
           {
@@ -576,7 +571,7 @@
           "RBAC-角色管理"
         ],
         "summary": "设置角色菜单",
-        "description": "为角色分配菜单权限",
+        "description": "为角色分配菜单权限。企业端仅可授予自己拥有的菜单，被编辑角色中未拥有的菜单将保留；超管角色仅平台端可管理。",
         "operationId": "setRoleMenus",
         "security": [
           {
@@ -785,6 +780,7 @@
           "RBAC-管理员管理"
         ],
         "summary": "更新管理员",
+        "description": "更新用户信息。超管用户仅平台端可管理（企业端只读）。",
         "operationId": "updateRbacUser",
         "security": [
           {
@@ -849,6 +845,7 @@
           "RBAC-管理员管理"
         ],
         "summary": "删除管理员",
+        "description": "删除用户。超管用户仅平台端可管理（企业端只读）。",
         "operationId": "deleteRbacUser",
         "security": [
           {
@@ -898,7 +895,7 @@
           "RBAC-管理员管理"
         ],
         "summary": "设置管理员角色",
-        "description": "为管理员分配角色",
+        "description": "为管理员分配角色（仅限非超管角色）。超管用户仅平台端可管理（企业端只读）。",
         "operationId": "setUserRoles",
         "security": [
           {
@@ -956,6 +953,7 @@
           "RBAC-管理员管理"
         ],
         "summary": "重置管理员密码",
+        "description": "重置用户密码。超管用户仅平台端可管理（企业端只读）。",
         "operationId": "resetUserPassword",
         "security": [
           {
@@ -3178,10 +3176,6 @@
             "type": "string",
             "description": "角色名称"
           },
-          "parent_id": {
-            "type": "integer",
-            "description": "父级角色ID"
-          },
           "sort": {
             "type": "integer",
             "description": "排序"
@@ -3201,13 +3195,6 @@
           "updated_at": {
             "type": "integer",
             "description": "更新时间"
-          },
-          "children": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RbacRole"
-            },
-            "description": "子角色"
           }
         }
       },

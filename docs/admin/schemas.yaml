@@ -271,9 +271,6 @@ schemas:
       role_name:
         type: string
         description: 角色名称
-      parent_id:
-        type: integer
-        description: 父级角色ID
       sort:
         type: integer
         description: 排序
@@ -289,12 +286,6 @@ schemas:
       updated_at:
         type: integer
         description: 更新时间
-      children:
-        type: array
-        items:
-          $ref: '#/schemas/RbacRole'
-        description: 子角色
-
   User:
     type: object
     properties:

@@ -3,6 +3,7 @@
     tags:
       - RBAC-角色管理
     summary: 获取角色列表
+    description: 获取角色列表（平铺结构，超管角色企业端只读）
     operationId: getRoleList
     security:
       - BearerAuth: []
@@ -58,9 +59,6 @@
               role_name:
                 type: string
                 description: 角色名称
-              parent_id:
-                type: integer
-                description: 父级角色ID
               sort:
                 type: integer
                 description: 排序
@@ -80,6 +78,7 @@
     tags:
       - RBAC-角色管理
     summary: 更新角色
+    description: 更新角色信息。超管角色仅平台端可管理（企业端只读）。
     operationId: updateRole
     security:
       - BearerAuth: []
@@ -99,9 +98,6 @@
               role_name:
                 type: string
                 description: 角色名称
-              parent_id:
-                type: integer
-                description: 父级角色ID
               sort:
                 type: integer
                 description: 排序
@@ -121,6 +117,7 @@
     tags:
       - RBAC-角色管理
     summary: 删除角色
+    description: 删除角色。超管角色仅平台端可管理（企业端只读）。
     operationId: deleteRole
     security:
       - BearerAuth: []
@@ -152,7 +149,7 @@
     tags:
       - RBAC-角色管理
     summary: 设置角色菜单
-    description: 为角色分配菜单权限
+    description: 为角色分配菜单权限。企业端仅可授予自己拥有的菜单，被编辑角色中未拥有的菜单将保留；超管角色仅平台端可管理。
     operationId: setRoleMenus
     security:
       - BearerAuth: []

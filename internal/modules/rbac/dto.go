@@ -156,7 +156,6 @@ type RbacRolePageListRequest struct {
 // RbacRoleCreateRequest 创建角色请求参数
 type RbacRoleCreateRequest struct {
 	RoleName string `json:"role_name" validate:"required,min=2,max=50"`
-	ParentId uint32 `json:"parent_id"`
 	Sort     uint32 `json:"sort"`
 	StoreId  uint32 `json:"store_id"`
 	IsSuper  int8   `json:"-"`
@@ -166,7 +165,6 @@ type RbacRoleCreateRequest struct {
 type RbacRoleUpdateRequest struct {
 	ID       uint32 `json:"id" validate:"required"`
 	RoleName string `json:"role_name" validate:"required,min=2,max=50"`
-	ParentId uint32 `json:"parent_id"`
 	Sort     uint32 `json:"sort"`
 	StoreId  uint32 `json:"store_id"`
 	IsSuper  int8   `json:"-"`

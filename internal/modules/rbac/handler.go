@@ -377,7 +377,7 @@ func (h *handler) roleList(ctx *gin.Context) {
 	} else {
 		req.IsSuper = 1
 	}
-	result, err := h.roleServ.FindTreeList(ctx.Request.Context(), req)
+	result, err := h.roleServ.FindAll(ctx.Request.Context(), req)
 	if err != nil {
 		response.Error(ctx, err)
 		return
