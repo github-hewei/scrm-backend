@@ -122,6 +122,10 @@ components:
       $ref: './schemas.yaml#/schemas/AuthLoginRequest'
     AuthLoginResponse:
       $ref: './schemas.yaml#/schemas/AuthLoginResponse'
+    AdminLoginData:
+      $ref: './schemas.yaml#/schemas/AdminLoginData'
+    AdminLoginUser:
+      $ref: './schemas.yaml#/schemas/AdminLoginUser'
     RbacUser:
       $ref: './schemas.yaml#/schemas/RbacUser'
     RbacUserRole:

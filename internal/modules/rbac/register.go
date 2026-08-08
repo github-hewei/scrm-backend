@@ -21,7 +21,7 @@ func buildAll(db *gorm.DB, binder *bind.Binder, config Config, rdb *redis.Client
 
 	authServ := NewAuthService(
 		userRepo, apiRepo, roleRepo, menuRepo,
-		roleMenuRepo, userRoleRepo, menuApiRepo,
+		roleMenuRepo, userRoleRepo, menuApiRepo, storeRepo,
 		config, rdb, captcha,
 	)
 

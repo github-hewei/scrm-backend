@@ -3038,26 +3038,59 @@
             "example": "success"
           },
           "data": {
-            "type": "object",
-            "properties": {
-              "token": {
-                "type": "string",
-                "description": "JWT令牌"
-              },
-              "ttl": {
-                "type": "integer",
-                "description": "Token有效期（秒）"
-              },
-              "user": {
-                "$ref": "#/components/schemas/RbacUser"
-              }
-            }
+            "$ref": "#/components/schemas/AdminLoginData"
           },
           "cost": {
             "type": "string"
           },
           "traceId": {
             "type": "string"
+          }
+        }
+      },
+      "AdminLoginData": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "JWT令牌"
+          },
+          "ttl": {
+            "type": "integer",
+            "description": "Token有效期（秒）"
+          },
+          "user": {
+            "$ref": "#/components/schemas/AdminLoginUser"
+          }
+        }
+      },
+      "AdminLoginUser": {
+        "type": "object",
+        "description": "登录用户信息(前端会话视图)",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "用户ID"
+          },
+          "username": {
+            "type": "string",
+            "description": "用户名"
+          },
+          "real_name": {
+            "type": "string",
+            "description": "姓名"
+          },
+          "is_super": {
+            "type": "integer",
+            "description": "是否超管（1是 0否）"
+          },
+          "store_id": {
+            "type": "integer",
+            "description": "企业ID"
+          },
+          "store_name": {
+            "type": "string",
+            "description": "企业名称"
           }
         }
       },

@@ -35,6 +35,7 @@ type AuthService struct {
 	roleMenuRepo *RbacRoleMenuRepository
 	userRoleRepo *RbacUserRoleRepository
 	menuApiRepo  *RbacMenuApiRepository
+	storeRepo    *RbacStoreRepository
 	cfg          Config
 	rdb          *redis.Client
 	captcha      CaptchaVerifier
@@ -49,6 +50,7 @@ func NewAuthService(
 	roleMenuRepo *RbacRoleMenuRepository,
 	userRoleRepo *RbacUserRoleRepository,
 	menuApiRepo *RbacMenuApiRepository,
+	storeRepo *RbacStoreRepository,
 	cfg Config,
 	rdb *redis.Client,
 	captcha CaptchaVerifier,
@@ -61,6 +63,7 @@ func NewAuthService(
 		roleMenuRepo: roleMenuRepo,
 		userRoleRepo: userRoleRepo,
 		menuApiRepo:  menuApiRepo,
+		storeRepo:    storeRepo,
 		cfg:          cfg,
 		rdb:          rdb,
 		captcha:      captcha,
@@ -94,6 +97,11 @@ func (s *AuthService) Login(ctx context.Context, req *AuthLoginRequest) (*AdminL
 		return nil, "", apperror.New(errcode.InvalidInput, apperror.WithMsg("用户名或密码错误"))
 	}
 
+	store, err := s.loadValidStore(ctx, item.StoreId)
+	if err != nil {
+		return nil, "", err
+	}
+
 	refreshToken, err := s.getRefreshToken()
 	if err != nil {
 		return nil, "", err
@@ -120,7 +128,7 @@ func (s *AuthService) Login(ctx context.Context, req *AuthLoginRequest) (*AdminL
 	return &AdminLoginResponse{
 		Token: tokenString,
 		Ttl:   s.cfg.RefreshTokenTtl,
-		User:  item,
+		User:  s.newAdminLoginUser(item, store.Name),
 	}, refreshToken, nil
 }
 
@@ -132,9 +140,23 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*A
 		return nil, apperror.Wrap(errcode.Internal, err, apperror.WithMsg("刷新令牌失败"))
 	}
 
-	item := &RbacUser{}
-	if err := json.Unmarshal(itemBytes, item); err != nil {
+	cached := &RbacUser{}
+	if err := json.Unmarshal(itemBytes, cached); err != nil {
 		return nil, apperror.Wrap(errcode.Internal, err, apperror.WithMsg("刷新令牌失败"))
+	}
+
+	// 从数据库重新加载用户，保证返回最新信息并校验用户仍有效
+	item, err := s.userRepo.FindOne(ctx, cached.ID)
+	if err != nil {
+		if errors.Is(err, baserepo.ErrRecordNotFound) {
+			return nil, apperror.New(errcode.Unauthorized, apperror.WithMsg("用户不存在或已失效，请重新登录"))
+		}
+		return nil, apperror.Wrap(errcode.Internal, err, apperror.WithMsg("刷新令牌失败"))
+	}
+
+	store, err := s.loadValidStore(ctx, item.StoreId)
+	if err != nil {
+		return nil, err
 	}
 
 	token, err := s.getAccessToken(item)
@@ -145,8 +167,41 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*A
 	return &AdminLoginResponse{
 		Token: token,
 		Ttl:   s.cfg.AccessTokenTtl,
-		User:  nil,
+		User:  s.newAdminLoginUser(item, store.Name),
 	}, nil
+}
+
+// newAdminLoginUser 构建登录用户视图(含企业名称)
+func (s *AuthService) newAdminLoginUser(user *RbacUser, storeName string) *AdminLoginUser {
+	if user == nil {
+		return nil
+	}
+	return &AdminLoginUser{
+		ID:        user.ID,
+		Username:  user.Username,
+		RealName:  user.RealName,
+		IsSuper:   user.IsSuper,
+		StoreId:   user.StoreId,
+		StoreName: storeName,
+	}
+}
+
+// loadValidStore 加载企业并校验状态(未绑定/不存在或已删除/已回收均拒绝)
+func (s *AuthService) loadValidStore(ctx context.Context, storeId uint32) (*RbacStore, error) {
+	if storeId == 0 {
+		return nil, apperror.New(errcode.Forbidden, apperror.WithMsg("账号未绑定企业"))
+	}
+	store, err := s.storeRepo.FindOne(ctx, storeId)
+	if err != nil {
+		if errors.Is(err, baserepo.ErrRecordNotFound) {
+			return nil, apperror.New(errcode.Forbidden, apperror.WithMsg("所属企业不存在或已停用"))
+		}
+		return nil, apperror.Wrap(errcode.Internal, err, apperror.WithMsg("校验企业状态失败"))
+	}
+	if store.IsRecycle == 1 {
+		return nil, apperror.New(errcode.Forbidden, apperror.WithMsg("所属企业已回收，请联系平台管理员"))
+	}
+	return store, nil
 }
 
 // getRefreshToken 获取刷新Token

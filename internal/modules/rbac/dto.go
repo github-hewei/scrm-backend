@@ -259,11 +259,21 @@ type ChangePasswordRequest struct {
 	NewPassword string `json:"new_password" validate:"required,min=6,max=20"`
 }
 
+// AdminLoginUser 登录用户信息(前端会话视图)
+type AdminLoginUser struct {
+	ID        uint32 `json:"id"`
+	Username  string `json:"username"`
+	RealName  string `json:"real_name"`
+	IsSuper   int8   `json:"is_super"`
+	StoreId   uint32 `json:"store_id"`
+	StoreName string `json:"store_name"`
+}
+
 // AdminLoginResponse 登录返回
 type AdminLoginResponse struct {
-	Token string    `json:"token"`
-	Ttl   int       `json:"ttl"`
-	User  *RbacUser `json:"user,omitempty"`
+	Token string           `json:"token"`
+	Ttl   int              `json:"ttl"`
+	User  *AdminLoginUser  `json:"user,omitempty"`
 }
 
 // CaptchaGenerateResponse 验证码生成响应
