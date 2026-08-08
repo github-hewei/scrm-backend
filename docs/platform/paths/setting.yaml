@@ -3,7 +3,7 @@
     tags:
       - 设置管理
     summary: 获取设置表单配置
-    description: 获取系统设置的表单配置信息，包含所有设置分组及字段定义。平台端返回全部配置（含平台专属）。
+    description: 获取设置表单配置信息。only_platform=true 返回平台专属配置(站点/邮件/七牛/文件上传)，false 返回企业端可配置项。
     operationId: getPlatformFormConfigs
     security:
       - BearerAuth: []
@@ -15,7 +15,7 @@
             properties:
               only_platform:
                 type: boolean
-                description: 仅获取平台级配置
+                description: 是否获取平台专属配置(true平台端 false企业端)
     responses:
       '200':
         description: 成功

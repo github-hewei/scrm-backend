@@ -164,6 +164,7 @@
     tags:
       - 设置管理
     summary: 获取表单配置
+    description: 获取企业端可配置的设置表单，平台专属配置(站点/邮件/七牛/文件上传)不返回。
     operationId: getFormConfigs
     security:
       - BearerAuth: []
@@ -175,7 +176,7 @@
             properties:
               only_platform:
                 type: boolean
-                description: 仅获取平台级配置
+                description: 是否获取平台专属配置(true平台端 false企业端)
     responses:
       '200':
         description: 成功

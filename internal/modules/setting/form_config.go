@@ -24,7 +24,7 @@ func FormConfigs() []FormGroup {
 			}},
 			{Key: "is_enabled", Label: "是否启用", Type: "switch"},
 		}},
-		{Key: "upload", Label: "文件上传", Description: "文件上传相关配置", OnlyPlatform: false, Fields: []FormField{
+		{Key: "upload", Label: "文件上传", Description: "文件上传相关配置", OnlyPlatform: true, Fields: []FormField{
 			{Key: "storage_type", Label: "存储方式", Type: "select", Required: true, Options: []FormOption{
 				{Label: "本地存储", Value: "local"}, {Label: "七牛云", Value: "qiniu"},
 			}},

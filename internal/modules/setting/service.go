@@ -118,7 +118,7 @@ func (s *Service) GetSettingValue(ctx context.Context, key string, storeId uint3
 }
 
 func (s *Service) getSettingValues(ctx context.Context, key string, storeId uint32) (string, error) {
-	if storeId == 0 {
+	if storeId == 0 || isPlatformOnlyKey(key) {
 		return s.getDefaultSettingValue(ctx, key)
 	}
 
@@ -130,6 +130,16 @@ func (s *Service) getSettingValues(ctx context.Context, key string, storeId uint
 		return "", apperror.Wrap(errcode.Internal, err, apperror.WithMsg("获取设置项失败"))
 	}
 	return s.getDefaultSettingValue(ctx, key)
+}
+
+// isPlatformOnlyKey 判断设置项是否为平台专属(平台专属设置仅读取平台默认值，忽略租户覆盖)
+func isPlatformOnlyKey(key string) bool {
+	for _, group := range FormConfigs() {
+		if group.OnlyPlatform && group.Key == key {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *Service) getDefaultSettingValue(ctx context.Context, key string) (string, error) {
@@ -146,16 +156,13 @@ func (s *Service) getDefaultSettingValue(ctx context.Context, key string) (strin
 // FormConfigs 获取表单配置
 func (s *Service) FormConfigs(ctx context.Context, req *FormConfigsRequest) ([]FormGroup, error) {
 	configs := FormConfigs()
-	if req.OnlyPlatform {
-		filtered := make([]FormGroup, 0)
-		for _, config := range configs {
-			if !config.OnlyPlatform {
-				filtered = append(filtered, config)
-			}
+	filtered := make([]FormGroup, 0)
+	for _, config := range configs {
+		if config.OnlyPlatform == req.OnlyPlatform {
+			filtered = append(filtered, config)
 		}
-		return filtered, nil
 	}
-	return configs, nil
+	return filtered, nil
 }
 
 // DefaultService 默认设置服务
