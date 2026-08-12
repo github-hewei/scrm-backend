@@ -2,6 +2,8 @@ filippo.io/edwards25519 v1.1.0 h1:FNf4tywRC1HmFuKW5xopWpigGjJKiJSV0Cqo0cJWDaA=
 filippo.io/edwards25519 v1.1.0/go.mod h1:BxyFTGdWcka3PhytdK4V28tE5sGfRvvvRV7EaN4VDT4=
 github.com/241x/zero-kit v1.7.3 h1:nQBlm46aV3sp65+m+Ry0JG8QZNQ+orjgl9khTqTAD00=
 github.com/241x/zero-kit v1.7.3/go.mod h1:kTy85POzfyBK/FKbNUNgmV0eah+p2fAqn6wDOOD75VI=
+github.com/241x/zero-third/wecom v0.0.2 h1:62cJAmMV45/aS+y16O2qmK5/LXaK1/d7bi6y5BKKG08=
+github.com/241x/zero-third/wecom v0.0.2/go.mod h1:DwxSOjO6aGHtYB9XH1mSRt8cAXYOSwO4jeQD5cKoexk=
 github.com/241x/zero-web v1.0.0 h1:LJrcAUSGAbhQZfIQIzAMUnPt2KruBHpWu4rXgmzeoOo=
 github.com/241x/zero-web v1.0.0/go.mod h1:ukpgu7sT8wlji43MFhP3YJY5zeKVDVAZeC8gKDjUPIM=
 github.com/BurntSushi/toml v1.3.2 h1:o7IhLm0Msx3BaB+n3Ag7L8EVlByGnpq14C4YWiu/gL8=
@@ -125,6 +127,8 @@ github.com/quic-go/quic-go v0.59.0 h1:OLJkp1Mlm/aS7dpKgTc6cnpynnD2Xg7C1pwL6vy/SA
 github.com/quic-go/quic-go v0.59.0/go.mod h1:upnsH4Ju1YkqpLXC305eW3yDZ4NfnNbmQRCMWS58IKU=
 github.com/redis/go-redis/v9 v9.20.0 h1:WnQYxLkgO2xiXTCJY0ldIiI8dNqCDlQAG+AtaH7a2a0=
 github.com/redis/go-redis/v9 v9.20.0/go.mod h1:v/M13XI1PVCDcm01VtPFOADfZtHf8YW3baQf57KlIkA=
+github.com/redis/go-redis/v9 v9.22.0 h1:laDvpYXTJtZLloinw1fA5Kqd6HAEH2XKxOkG/PDq2F0=
+github.com/redis/go-redis/v9 v9.22.0/go.mod h1:y2g0Wj8rQvuK0ELM+oxSudcLtC09JScs98I/X9gRWY4=
 github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec h1:W09IVJc94icq4NjY3clb7Lk8O1qJ8BdBEF8z0ibU0rE=
 github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
 github.com/rogpeppe/go-internal v1.10.0 h1:TMyTOH3F/DB16zRVcYyreMH6GnZZrwQVAoYjRBZyWFQ=

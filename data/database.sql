@@ -313,3 +313,42 @@ INSERT INTO `gaz_platform_user` (`id`, `username`, `password`, `real_name`, `ava
 
 -- 角色层级改为扁平管理，移除父级角色ID
 ALTER TABLE `gaz_rbac_role` DROP COLUMN `parent_id`;
+
+-- [CHECK POINT] --
+
+-- 企业微信企业配置表：每家企业(租户)一条，仅存储企业身份与回调路由信息
+CREATE TABLE `gaz_wecom_config` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `store_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '企业ID(租户)',
+  `corp_id` varchar(64) NOT NULL DEFAULT '' COMMENT '企业微信企业ID(CorpID)',
+  `corp_name` varchar(128) NOT NULL DEFAULT '' COMMENT '企业微信企业名称(展示用)',
+  `api_base_url` varchar(255) NOT NULL DEFAULT '' COMMENT '企微API代理地址(留空使用官方地址)',
+  `status` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT '接入状态(0未接入 1已接入 2已停用)',
+  `created_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间',
+  `updated_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '更新时间',
+  `deleted_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '删除时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_store_id` (`store_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARSET=utf8mb4 COMMENT='企业微信企业配置表';
+
+-- [CHECK POINT] --
+
+-- 企业微信应用/功能凭据表：自建应用、客户联系、通讯录同步统一存储，每家企业(租户)可配置多行
+CREATE TABLE `gaz_wecom_app` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `store_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '企业ID(租户)',
+  `app_type` tinyint(3) unsigned NOT NULL DEFAULT '10' COMMENT '类型(10自建应用 20客户联系 30通讯录同步)',
+  `app_name` varchar(64) NOT NULL DEFAULT '' COMMENT '应用名称',
+  `callback_token` varchar(32) NOT NULL DEFAULT '' COMMENT '回调URL路由标识(系统随机生成, 用于定位应用)',
+  `agent_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '应用ID(AgentID, 客户联系/通讯录同步为0)',
+  `secret` varchar(255) NOT NULL DEFAULT '' COMMENT '应用密钥(建议加密存储)',
+  `token` varchar(64) NOT NULL DEFAULT '' COMMENT '企微回调Token(用户配置, 用于验签解密)',
+  `encoding_aes_key` varchar(64) NOT NULL DEFAULT '' COMMENT '回调EncodingAESKey(建议加密存储)',
+  `status` tinyint(3) unsigned NOT NULL DEFAULT '1' COMMENT '状态(1启用 0停用)',
+  `created_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间',
+  `updated_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '更新时间',
+  `deleted_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '删除时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_store_app` (`store_id`,`app_type`,`agent_id`),
+  KEY `idx_callback_token` (`callback_token`)
+) ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARSET=utf8mb4 COMMENT='企业微信应用/功能凭据表';
