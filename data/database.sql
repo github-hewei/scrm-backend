@@ -454,3 +454,48 @@ CREATE TABLE `gaz_wecom_customer_follow` (
   KEY `idx_store_user` (`store_id`,`user_id`),
   KEY `idx_store_state` (`store_id`,`state`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARSET=utf8mb4 COMMENT='企业微信客户跟进人关系表';
+
+-- [CHECK POINT] --
+
+-- 企业微信客户群表：对齐企微客户群列表/详情接口group_chat
+CREATE TABLE `gaz_wecom_group` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `store_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '企业ID(租户)',
+  `chat_id` varchar(64) NOT NULL DEFAULT '' COMMENT '客户群ID',
+  `name` varchar(255) NOT NULL DEFAULT '' COMMENT '群名',
+  `owner` varchar(64) NOT NULL DEFAULT '' COMMENT '群主企微UserID',
+  `create_time` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '群创建时间',
+  `notice` varchar(2000) NOT NULL DEFAULT '' COMMENT '群公告',
+  `status` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT '群状态(0跟进人正常 1跟进人离职 2离职继承中 3离职继承完成)',
+  `member_count` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '群成员数(冗余, 同步时按member_list长度写入)',
+  `member_version` varchar(64) NOT NULL DEFAULT '' COMMENT '成员版本号(详情接口返回, 用于增量同步)',
+  `created_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间',
+  `updated_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '更新时间',
+  `deleted_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '删除时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_store_group` (`store_id`,`chat_id`),
+  KEY `idx_store_owner` (`store_id`,`owner`)
+) ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARSET=utf8mb4 COMMENT='企业微信客户群表';
+
+-- [CHECK POINT] --
+
+-- 企业微信客户群成员表：对齐企微客户群详情接口member_list，群与成员多对多
+CREATE TABLE `gaz_wecom_group_member` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `store_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '企业ID(租户)',
+  `chat_id` varchar(64) NOT NULL DEFAULT '' COMMENT '客户群ID(关联gaz_wecom_group)',
+  `user_id` varchar(64) NOT NULL DEFAULT '' COMMENT '成员企微UserID(外部联系人为external_userid)',
+  `type` tinyint(3) unsigned NOT NULL DEFAULT '1' COMMENT '成员类型(1企业成员 2外部联系人)',
+  `unionid` varchar(64) NOT NULL DEFAULT '' COMMENT '微信UnionID(外部联系人)',
+  `join_time` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '入群时间',
+  `join_scene` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT '入群方式(1成员直接邀请 2邀请链接 3扫描群二维码)',
+  `invitor_userid` varchar(64) NOT NULL DEFAULT '' COMMENT '邀请人企微UserID(外部联系人入群时)',
+  `group_nickname` varchar(64) NOT NULL DEFAULT '' COMMENT '群内昵称',
+  `name` varchar(64) NOT NULL DEFAULT '' COMMENT '成员名称(外部联系人为微信昵称)',
+  `is_admin` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT '是否群管理员(1是 0否, 对齐admin_list)',
+  `created_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间',
+  `deleted_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '删除时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_store_member` (`store_id`,`chat_id`),
+  KEY `idx_store_user` (`store_id`,`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARSET=utf8mb4 COMMENT='企业微信客户群成员表';
