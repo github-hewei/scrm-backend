@@ -499,3 +499,10 @@ CREATE TABLE `gaz_wecom_group_member` (
   KEY `idx_store_member` (`store_id`,`chat_id`),
   KEY `idx_store_user` (`store_id`,`user_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARSET=utf8mb4 COMMENT='企业微信客户群成员表';
+
+-- [CHECK POINT] --
+
+-- 部门表增加物化路径字段，便于按前缀查询子孙部门，避免递归
+ALTER TABLE `gaz_wecom_department`
+ADD COLUMN `path` varchar(255) NOT NULL DEFAULT '' COMMENT '物化路径(如 0:1:5:)，父路径+自身department_id+冒号' AFTER `parent_id`,
+ADD KEY `idx_store_path` (`store_id`,`path`);

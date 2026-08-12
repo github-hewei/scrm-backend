@@ -18,28 +18,28 @@ type ConfigSaveRequest struct {
 // AppInfo 应用信息
 // CallbackUrl 回显时由站点域名+token拼接返回
 type AppInfo struct {
-	ID          uint32 `json:"id"`
-	AppType     AppType `json:"app_type"`
-	AppTypeText string  `json:"app_type_text"`
-	AppName     string  `json:"app_name"`
-	AgentId       uint32 `json:"agent_id"`
-	SecretSet     bool   `json:"secret_set"`
-	TokenSet      bool   `json:"token_set"`
-	CallbackToken string `json:"callback_token"`
-	CallbackUrl   string `json:"callback_url"`
-	Status        int8   `json:"status"`
+	ID            uint32  `json:"id"`
+	AppType       AppType `json:"app_type"`
+	AppTypeText   string  `json:"app_type_text"`
+	AppName       string  `json:"app_name"`
+	AgentId       uint32  `json:"agent_id"`
+	SecretSet     bool    `json:"secret_set"`
+	TokenSet      bool    `json:"token_set"`
+	CallbackToken string  `json:"callback_token"`
+	CallbackUrl   string  `json:"callback_url"`
+	Status        int8    `json:"status"`
 }
 
 // AppSaveRequest 保存应用凭据请求
 // CallbackToken 由取地址接口生成后前端传入，首次保存必填
 type AppSaveRequest struct {
 	AppType        AppType `json:"app_type" validate:"required,oneof=10 20 30"`
-	AppName        string `json:"app_name" validate:"max=64"`
-	AgentId        uint32 `json:"agent_id"`
-	Secret         string `json:"secret" validate:"max=255"`
-	Token          string `json:"token" validate:"max=64"`
-	EncodingAesKey string `json:"encoding_aes_key" validate:"max=64"`
-	CallbackToken  string `json:"callback_token" validate:"max=32"`
+	AppName        string  `json:"app_name" validate:"max=64"`
+	AgentId        uint32  `json:"agent_id"`
+	Secret         string  `json:"secret" validate:"max=255"`
+	Token          string  `json:"token" validate:"max=64"`
+	EncodingAesKey string  `json:"encoding_aes_key" validate:"max=64"`
+	CallbackToken  string  `json:"callback_token" validate:"max=32"`
 }
 
 // AppDeleteRequest 删除应用请求

@@ -8,6 +8,7 @@ type WecomDepartment struct {
 	StoreId      uint32 `json:"store_id" gorm:"not null;default:0;comment:企业ID ( 租户 ) ;index:idx_store_department,priority:1;index:idx_store_parent,priority:1"`
 	DepartmentId uint32 `json:"department_id" gorm:"not null;default:0;comment:企微部门ID;index:idx_store_department,priority:2"`
 	ParentId     uint32 `json:"parent_id" gorm:"not null;default:0;comment:父级部门ID ( 0为根部门 ) ;index:idx_store_parent,priority:2"`
+	Path         string `json:"path" gorm:"size:255;not null;default:'';comment:物化路径 ( 如0:1:5:, 父路径+自身department_id+冒号 ) ;index:idx_store_path"`
 	Name         string `json:"name" gorm:"size:64;not null;default:'';comment:部门名称"`
 	Sort         uint32 `json:"sort" gorm:"not null;default:0;comment:部门排序 ( 数字越小越靠前 ) "`
 	CreatedAt    uint32 `json:"created_at" gorm:"not null;comment:创建时间;autoCreateTime"`
