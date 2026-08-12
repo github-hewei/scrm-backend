@@ -5,6 +5,30 @@ import (
 	"gorm.io/gorm"
 )
 
+// AppType 应用类型
+type AppType int8
+
+// 应用类型定义
+const (
+	AppTypeSelfBuilt   AppType = 10 // 自建应用
+	AppTypeContact     AppType = 20 // 客户联系
+	AppTypeAddressBook AppType = 30 // 通讯录同步
+)
+
+// Name 应用类型中文名称
+func (t AppType) Name() string {
+	switch t {
+	case AppTypeSelfBuilt:
+		return "自建应用"
+	case AppTypeContact:
+		return "客户联系"
+	case AppTypeAddressBook:
+		return "通讯录同步"
+	default:
+		return ""
+	}
+}
+
 // WecomConfigRepository 企业微信配置仓库
 type WecomConfigRepository struct {
 	*baserepo.BaseRepository[WecomConfig]
