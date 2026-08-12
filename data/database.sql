@@ -407,3 +407,50 @@ CREATE TABLE `gaz_wecom_member_department` (
   KEY `idx_member` (`store_id`,`user_id`),
   KEY `idx_department` (`store_id`,`department_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARSET=utf8mb4 COMMENT='企业微信成员与部门关联表';
+
+-- [CHECK POINT] --
+
+-- 企业微信外部联系人(SCRM客户)表：对齐企微客户详情接口external_contact
+CREATE TABLE `gaz_wecom_customer` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `store_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '企业ID(租户)',
+  `external_userid` varchar(64) NOT NULL DEFAULT '' COMMENT '企微外部联系人UserID',
+  `name` varchar(64) NOT NULL DEFAULT '' COMMENT '客户名称(昵称)',
+  `position` varchar(128) NOT NULL DEFAULT '' COMMENT '职位',
+  `avatar` varchar(255) NOT NULL DEFAULT '' COMMENT '头像URL',
+  `corp_name` varchar(128) NOT NULL DEFAULT '' COMMENT '公司简称',
+  `corp_full_name` varchar(255) NOT NULL DEFAULT '' COMMENT '公司全称',
+  `type` tinyint(3) unsigned NOT NULL DEFAULT '1' COMMENT '类型(1微信用户 2企业微信用户)',
+  `gender` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT '性别(0未知 1男 2女)',
+  `unionid` varchar(64) NOT NULL DEFAULT '' COMMENT '微信UnionID',
+  `created_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间',
+  `updated_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '更新时间',
+  `deleted_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '删除时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_store_customer` (`store_id`,`external_userid`),
+  KEY `idx_store_unionid` (`store_id`,`unionid`)
+) ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARSET=utf8mb4 COMMENT='企业微信外部联系人(客户)表';
+
+-- [CHECK POINT] --
+
+-- 企业微信客户跟进人关系表：对齐企微客户详情接口follow_user，一个客户可被多个成员跟进
+CREATE TABLE `gaz_wecom_customer_follow` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `store_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '企业ID(租户)',
+  `external_userid` varchar(64) NOT NULL DEFAULT '' COMMENT '客户UserID(关联gaz_wecom_customer)',
+  `user_id` varchar(64) NOT NULL DEFAULT '' COMMENT '跟进人企微UserID',
+  `remark` varchar(128) NOT NULL DEFAULT '' COMMENT '跟进人备注',
+  `description` varchar(255) NOT NULL DEFAULT '' COMMENT '跟进人描述',
+  `remark_corp_name` varchar(128) NOT NULL DEFAULT '' COMMENT '备注公司名',
+  `remark_mobiles` varchar(255) NOT NULL DEFAULT '' COMMENT '备注手机号(逗号分隔)',
+  `add_way` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT '添加方式(与企微add_way一致)',
+  `state` varchar(30) NOT NULL DEFAULT '' COMMENT '添加渠道标识',
+  `create_time` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '添加客户时间',
+  `created_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间',
+  `updated_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '更新时间',
+  `deleted_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '删除时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_store_follow` (`store_id`,`external_userid`,`user_id`),
+  KEY `idx_store_user` (`store_id`,`user_id`),
+  KEY `idx_store_state` (`store_id`,`state`)
+) ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARSET=utf8mb4 COMMENT='企业微信客户跟进人关系表';
