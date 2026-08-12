@@ -352,3 +352,58 @@ CREATE TABLE `gaz_wecom_app` (
   KEY `idx_store_app` (`store_id`,`app_type`,`agent_id`),
   KEY `idx_callback_token` (`callback_token`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARSET=utf8mb4 COMMENT='企业微信应用/功能凭据表';
+
+-- [CHECK POINT] --
+
+-- 企业微信部门表：通讯录同步产物，按企微部门ID建树形结构
+CREATE TABLE `gaz_wecom_department` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `store_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '企业ID(租户)',
+  `department_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '企微部门ID',
+  `parent_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '父级部门ID(0为根部门)',
+  `name` varchar(64) NOT NULL DEFAULT '' COMMENT '部门名称',
+  `sort` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '部门排序(数字越小越靠前)',
+  `created_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间',
+  `updated_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '更新时间',
+  `deleted_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '删除时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_store_department` (`store_id`,`department_id`),
+  KEY `idx_store_parent` (`store_id`,`parent_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARSET=utf8mb4 COMMENT='企业微信部门表';
+
+-- [CHECK POINT] --
+
+-- 企业微信成员表：通讯录同步产物
+CREATE TABLE `gaz_wecom_member` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `store_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '企业ID(租户)',
+  `user_id` varchar(64) NOT NULL DEFAULT '' COMMENT '企微成员UserID',
+  `name` varchar(64) NOT NULL DEFAULT '' COMMENT '成员姓名',
+  `position` varchar(255) NOT NULL DEFAULT '' COMMENT '职位',
+  `mobile` varchar(30) NOT NULL DEFAULT '' COMMENT '手机号',
+  `gender` varchar(2) NOT NULL DEFAULT '' COMMENT '性别(0未知 1男 2女)',
+  `email` varchar(64) NOT NULL DEFAULT '' COMMENT '邮箱',
+  `avatar` varchar(255) NOT NULL DEFAULT '' COMMENT '头像URL',
+  `status` tinyint(3) unsigned NOT NULL DEFAULT '1' COMMENT '成员状态(1已激活 2已禁用 4未激活 5退出企业)',
+  `created_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间',
+  `updated_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '更新时间',
+  `deleted_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '删除时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_store_user` (`store_id`,`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARSET=utf8mb4 COMMENT='企业微信成员表';
+
+-- [CHECK POINT] --
+
+-- 企业微信成员与部门关联表：成员与部门多对多关系，含按部门负责人标记
+CREATE TABLE `gaz_wecom_member_department` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `store_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '企业ID(租户)',
+  `user_id` varchar(64) NOT NULL DEFAULT '' COMMENT '企微成员UserID(关联gaz_wecom_member.user_id)',
+  `department_id` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '部门ID(关联gaz_wecom_department.department_id)',
+  `is_leader` tinyint(3) unsigned NOT NULL DEFAULT '0' COMMENT '是否该部门负责人(1是 0否)',
+  `sort` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '成员在部门内的排序',
+  `created_at` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_member` (`store_id`,`user_id`),
+  KEY `idx_department` (`store_id`,`department_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARSET=utf8mb4 COMMENT='企业微信成员与部门关联表';
