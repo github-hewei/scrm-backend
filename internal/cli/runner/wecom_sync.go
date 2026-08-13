@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/241x/zero-kit/logger"
@@ -64,13 +65,18 @@ func (r *WecomSyncRunner) Run(ctx context.Context, storeId uint32, scope string)
 		return nil
 	}
 
+	errs := make([]error, 0, len(storeIds))
 	for _, sid := range storeIds {
 		r.log.Info("开始同步企业", "store_id", sid, "scope", parsedScope)
 		if err := r.svc.SyncStore(ctx, sid, parsedScope); err != nil {
 			r.log.Err(err, "同步企业失败", "store_id", sid)
+			errs = append(errs, fmt.Errorf("store_id=%d: %w", sid, err))
 			continue // 单个企业失败不阻断其它企业
 		}
 		r.log.Info("企业同步完成", "store_id", sid, "scope", parsedScope)
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("同步失败 %d/%d 个企业: %w", len(errs), len(storeIds), errors.Join(errs...))
 	}
 	return nil
 }

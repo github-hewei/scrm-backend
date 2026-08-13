@@ -48,8 +48,8 @@ func (a *App) AddCommand(cmd *cobra.Command) {
 	a.root.AddCommand(cmd)
 }
 
-// Run 启动命令，处理信号与优雅关闭。
-func (a *App) Run() {
+// Run 启动命令，处理信号与优雅关闭。命令执行失败时返回非 0 退出码
+func (a *App) Run() int {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -57,16 +57,18 @@ func (a *App) Run() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	defer signal.Stop(sigChan)
 
-	done := make(chan struct{})
+	exitCode := 0
+	done := make(chan int, 1)
 	go func() {
-		defer close(done)
 		if err := a.root.ExecuteContext(ctx); err != nil {
 			var cost time.Duration
 			if t, ok := ctxkeys.BeginTime(a.root.Context()); ok {
 				cost = time.Since(t)
 			}
 			logger.Ctx(a.root.Context()).Err(err, "Error Command", "cost", cost)
+			exitCode = 1
 		}
+		done <- exitCode
 	}()
 
 	select {
@@ -76,11 +78,14 @@ func (a *App) Run() {
 		timeout := time.NewTimer(10 * time.Second)
 		defer timeout.Stop()
 		select {
-		case <-done:
+		case code := <-done:
+			return code
 		case <-timeout.C:
 			a.l.Warn("Timeout exit")
+			return 1
 		}
-	case <-done:
+	case code := <-done:
+		return code
 	}
 }
 

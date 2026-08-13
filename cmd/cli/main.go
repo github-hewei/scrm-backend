@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"zero-backend/internal/cli"
 	"zero-backend/internal/cli/runner"
 	"zero-backend/internal/config"
@@ -36,7 +38,7 @@ func main() {
 	app.AddCommand(cli.QueueCmd(queue.NewQueueManager(rdb)))
 	app.AddCommand(cli.SyncApiCmd(runner.NewSyncApiRunner(log, rbac.NewRbacApiRepository(db))))
 	app.AddCommand(cli.WecomSyncCmd(log, buildWecomSyncService(db, rdb)))
-	app.Run()
+	os.Exit(app.Run())
 }
 
 // buildWecomSyncService 组装企微同步服务

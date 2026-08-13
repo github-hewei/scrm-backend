@@ -20,15 +20,18 @@ func NewGroupSyncer(groupRepo *WecomGroupRepository, groupMemberRepo *WecomGroup
 	return &GroupSyncer{groupRepo: groupRepo, groupMemberRepo: groupMemberRepo}
 }
 
-// Sync 全量同步客户群。策略：分页拉取群列表，逐个拉详情并 upsert 群与成员
+// Sync 全量同步客户群。策略：分页拉取群列表，逐个拉详情并 upsert 群与成员；
+// 全部分页拉取成功后，清理企微已不返回（解散）的本地群及其成员
 func (s *GroupSyncer) Sync(ctx context.Context, client *wecom.Client, storeId uint32) error {
 	cursor := ""
+	seen := make(map[string]struct{})
 	for {
 		listResp, err := client.ExternalContact.GetGroupChatList(ctx, 0, 100, nil, cursor)
 		if err != nil {
 			return apperror.Wrap(errcode.Internal, err, apperror.WithMsgf("拉取客户群列表失败 store_id=%d", storeId))
 		}
 		for _, entry := range listResp.GroupChatList {
+			seen[entry.ChatID] = struct{}{}
 			if err := s.syncGroup(ctx, client, storeId, entry.ChatID, int8(entry.Status)); err != nil {
 				return err
 			}
@@ -37,6 +40,24 @@ func (s *GroupSyncer) Sync(ctx context.Context, client *wecom.Client, storeId ui
 			break
 		}
 		cursor = listResp.NextCursor
+	}
+	return s.cleanupDisbanded(ctx, storeId, seen)
+}
+
+// cleanupDisbanded 清理已解散群：本地存在但企微列表不再返回的群软删，成员保留（软删群对程序不可见，成员无独立访问路径）。
+// 仅在整轮分页拉取成功后执行，避免中途失败时误删未同步到的群
+func (s *GroupSyncer) cleanupDisbanded(ctx context.Context, storeId uint32, seen map[string]struct{}) error {
+	groups, err := s.groupRepo.FindAll(ctx, &GroupFilter{StoreId: storeId}, nil, nil)
+	if err != nil {
+		return apperror.Wrap(errcode.Internal, err, apperror.WithMsgf("查询本地客户群失败 store_id=%d", storeId))
+	}
+	for _, g := range groups {
+		if _, ok := seen[g.ChatId]; ok {
+			continue
+		}
+		if err := s.groupRepo.Delete(ctx, g.ID); err != nil {
+			return apperror.Wrap(errcode.Internal, err, apperror.WithMsgf("清理已解散客户群失败 chat_id=%s", g.ChatId))
+		}
 	}
 	return nil
 }
@@ -82,7 +103,8 @@ func (s *GroupSyncer) upsertGroup(ctx context.Context, storeId uint32, chatId st
 }
 
 // upsertMembers 按 (store_id, chat_id, user_id) 增量同步群成员：
-// 批量更新已存在、批量插入新增、批量软删除已移除
+// 批量更新已存在、批量插入新增、批量软删除已移除。
+// 软删行对程序不可见，退群后重新入群的成员视为新成员直接插入
 func (s *GroupSyncer) upsertMembers(ctx context.Context, storeId uint32, chatId string, detail *wecom.GroupChat) error {
 	// 现有成员映射
 	existingList, err := s.groupMemberRepo.FindAll(ctx, &GroupMemberFilter{StoreId: storeId, ChatId: chatId}, nil, nil)
