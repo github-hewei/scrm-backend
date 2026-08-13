@@ -44,6 +44,7 @@ type WecomConfigFilter struct {
 	Id      uint32
 	StoreId uint32
 	CorpId  string
+	Status  int8
 }
 
 // Apply 应用过滤条件
@@ -59,6 +60,9 @@ func (f *WecomConfigFilter) Apply(db *gorm.DB) *gorm.DB {
 	}
 	if f.CorpId != "" {
 		db = db.Where("corp_id = ?", f.CorpId)
+	}
+	if f.Status != 0 {
+		db = db.Where("status = ?", f.Status)
 	}
 	return db
 }

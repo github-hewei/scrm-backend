@@ -4,6 +4,7 @@ go 1.26.4
 
 require (
 	github.com/241x/zero-kit v1.7.3
+	github.com/241x/zero-third/wecom v0.0.2
 	github.com/241x/zero-web v1.0.0
 	github.com/gin-gonic/gin v1.12.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
@@ -23,7 +24,6 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
-	github.com/241x/zero-third/wecom v0.0.2 // indirect
 	github.com/BurntSushi/toml v1.3.2 // indirect
 	github.com/alex-ant/gomath v0.0.0-20160516115720-89013a210a82 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
@@ -87,3 +87,5 @@ require (
 	gorm.io/driver/mysql v1.6.0 // indirect
 	modernc.org/fileutil v1.0.0 // indirect
 )
+
+replace github.com/241x/zero-third/wecom => ../zero-third/wecom
