@@ -14,6 +14,7 @@ import (
 	"zero-backend/internal/modules/user"
 	"zero-backend/internal/modules/wecom/config"
 	"zero-backend/internal/modules/wecom/contact"
+	"zero-backend/internal/modules/wecom/customer"
 	"zero-backend/internal/provider"
 
 	"github.com/241x/zero-kit/bind"
@@ -49,6 +50,9 @@ func NewGin(
 	settingSvc := provider.NewSettingService(db)
 	config.RegisterAdmin(protected, db, binder, settingSvc)
 	contact.RegisterAdmin(protected, db, binder)
+
+	memberRepo := contact.NewWecomMemberRepository(db)
+	customer.RegisterAdmin(protected, db, binder, memberRepo)
 	article.RegisterAdmin(protected, db, binder)
 	user.RegisterAdmin(protected, db, binder)
 	region.Register(protected, db, binder)

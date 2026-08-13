@@ -55,6 +55,22 @@ func NewWecomMemberRepository(db *gorm.DB) *WecomMemberRepository {
 	return &WecomMemberRepository{BaseRepository: baserepo.NewBaseRepository[WecomMember](db)}
 }
 
+// FindMemberNames 按成员ID列表批量查询姓名，返回 user_id -> name 映射（跨包供客户模块调用）
+func (r *WecomMemberRepository) FindMemberNames(ctx context.Context, storeId uint32, userIds []string) (map[string]string, error) {
+	result := make(map[string]string, len(userIds))
+	if len(userIds) == 0 {
+		return result, nil
+	}
+	list, err := r.FindAll(ctx, &MemberFilter{StoreId: storeId, UserIds: userIds}, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	for _, member := range list {
+		result[member.UserId] = member.Name
+	}
+	return result, nil
+}
+
 // FindPageByDepartmentPath 按部门物化路径分页查询成员（含所有子孙部门），返回列表与总数。
 // 使用子查询+semi-join避免大IN列表，departmentPath 为部门自身的 path（如 0:1:）
 func (r *WecomMemberRepository) FindPageByDepartmentPath(ctx context.Context, storeId uint32, departmentPath string, status int8, page, limit int) ([]*WecomMember, int64, error) {

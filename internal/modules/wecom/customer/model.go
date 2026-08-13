@@ -31,7 +31,7 @@ type WecomCustomerFollow struct {
 	Description    string `json:"description" gorm:"size:255;not null;default:'';comment:跟进人描述"`
 	RemarkCorpName string `json:"remark_corp_name" gorm:"size:128;not null;default:'';comment:备注公司名"`
 	RemarkMobiles  string `json:"remark_mobiles" gorm:"size:255;not null;default:'';comment:备注手机号 ( 逗号分隔 ) "`
-	AddWay         int8   `json:"add_way" gorm:"type:tinyint;not null;default:0;comment:添加方式 ( 与企微add_way一致 ) "`
+	AddWay         int16  `json:"add_way" gorm:"type:smallint;not null;default:0;comment:添加方式 ( 与企微add_way一致 ) "`
 	State          string `json:"state" gorm:"size:30;not null;default:'';comment:添加渠道标识;index:idx_store_state,priority:2"`
 	CreateTime     uint32 `json:"create_time" gorm:"not null;default:0;comment:添加客户时间"`
 	CreatedAt      uint32 `json:"created_at" gorm:"not null;comment:创建时间;autoCreateTime"`

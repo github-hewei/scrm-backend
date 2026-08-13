@@ -506,3 +506,9 @@ CREATE TABLE `gaz_wecom_group_member` (
 ALTER TABLE `gaz_wecom_department`
 ADD COLUMN `path` varchar(255) NOT NULL DEFAULT '' COMMENT '物化路径(如 0:1:5:)，父路径+自身department_id+冒号' AFTER `parent_id`,
 ADD KEY `idx_store_path` (`store_id`,`path`);
+
+-- [CHECK POINT] --
+
+-- 客户跟进表add_way枚举值含201/202，tinyint(-128~127)溢出，扩容为smallint
+ALTER TABLE `gaz_wecom_customer_follow`
+MODIFY COLUMN `add_way` smallint unsigned NOT NULL DEFAULT '0' COMMENT '添加方式(与企微add_way一致)';
