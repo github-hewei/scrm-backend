@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -79,6 +80,14 @@ func (h *WecomSyncJobHandler) Execute(ctx context.Context, j *job.Job) (retErr e
 	}
 
 	retErr = h.svc.SyncStores(ctx, storeIds, scope, onProgress)
+
+	// 作业被取消（ctx 已关闭）时任务标记为 cancelled，与失败区分开
+	if errors.Is(retErr, context.Canceled) {
+		if err := rec.Cancel(ctx); err != nil {
+			h.log.Warn("同步任务取消记录失败", "job_id", j.ID, "error", err)
+		}
+		return retErr
+	}
 
 	resultJSON, _ := json.Marshal(map[string]any{
 		"scope":   req.Scope,
