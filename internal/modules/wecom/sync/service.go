@@ -2,8 +2,9 @@ package sync
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
-	"zero-backend/internal/cli/runner"
 	"zero-backend/internal/modules/wecom/config"
 	"zero-backend/internal/modules/wecom/group"
 
@@ -36,8 +37,35 @@ func (s *Service) ListActiveStoreIds(ctx context.Context) ([]uint32, error) {
 	return storeIds, nil
 }
 
-// SyncStore 同步指定企业数据。实现 runner.WecomSyncService 接口
-func (s *Service) SyncStore(ctx context.Context, storeId uint32, scope runner.Scope) error {
+// LoadStoreIds 加载待同步企业ID列表：storeId=0 时返回全部已接入(status=1)企业
+func (s *Service) LoadStoreIds(ctx context.Context, storeId uint32) ([]uint32, error) {
+	if storeId != 0 {
+		return []uint32{storeId}, nil
+	}
+	return s.ListActiveStoreIds(ctx)
+}
+
+// SyncStores 批量同步多个企业：循环调 SyncStore，每完成一个企业回调 onProgress(storeId, completed, total, err)，
+// 全部完成后聚合错误返回（单个企业失败不阻断其它企业）
+func (s *Service) SyncStores(ctx context.Context, storeIds []uint32, scope Scope, onProgress func(storeId uint32, completed, total int, err error)) error {
+	errs := make([]error, 0, len(storeIds))
+	for i, sid := range storeIds {
+		syncErr := s.SyncStore(ctx, sid, scope)
+		if syncErr != nil {
+			errs = append(errs, fmt.Errorf("store_id=%d: %w", sid, syncErr))
+		}
+		if onProgress != nil {
+			onProgress(sid, i+1, len(storeIds), syncErr)
+		}
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("同步失败 %d/%d 个企业: %w", len(errs), len(storeIds), errors.Join(errs...))
+	}
+	return nil
+}
+
+// SyncStore 同步指定企业数据
+func (s *Service) SyncStore(ctx context.Context, storeId uint32, scope Scope) error {
 	// 构建SDK客户端
 	client, err := s.clientMgr.Get(ctx, storeId)
 	if err != nil {
@@ -45,9 +73,9 @@ func (s *Service) SyncStore(ctx context.Context, storeId uint32, scope runner.Sc
 	}
 
 	switch scope {
-	case runner.ScopeGroup:
+	case ScopeGroup:
 		return s.groupSvc.Sync(ctx, client, storeId)
-	case runner.ScopeAll:
+	case ScopeAll:
 		// TODO: 依次同步通讯录/客户/客户群
 		return s.groupSvc.Sync(ctx, client, storeId)
 	default:

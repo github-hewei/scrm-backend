@@ -4,9 +4,13 @@ import (
 	"zero-backend/internal/config"
 	"zero-backend/internal/modules/captcha"
 	"zero-backend/internal/modules/setting"
+	wecomconfig "zero-backend/internal/modules/wecom/config"
+	"zero-backend/internal/modules/wecom/group"
+	wecomsync "zero-backend/internal/modules/wecom/sync"
 
 	"github.com/241x/zero-kit/apperror"
 	"github.com/241x/zero-kit/logger"
+	"github.com/241x/zero-third/wecom"
 	"github.com/241x/zero-web/errcode"
 	"github.com/241x/zero-web/server"
 	goredis "github.com/redis/go-redis/v9"
@@ -98,4 +102,13 @@ func MustNewCaptchaService(rdb *goredis.Client, cfg captcha.Config) *captcha.Ser
 		panic(err)
 	}
 	return svc
+}
+
+// NewWecomSyncService 组装企微数据同步服务（CLI/worker/web 共用同一内核）
+func NewWecomSyncService(db *gorm.DB, rdb *goredis.Client) *wecomsync.Service {
+	configRepo := wecomconfig.NewWecomConfigRepository(db)
+	appRepo := wecomconfig.NewWecomAppRepository(db)
+	clientMgr := wecomsync.NewClientManager(configRepo, appRepo, wecom.NewRedisCache(rdb))
+	groupSyncer := group.NewGroupSyncer(group.NewWecomGroupRepository(db), group.NewWecomGroupMemberRepository(db))
+	return wecomsync.NewService(configRepo, clientMgr, groupSyncer)
 }

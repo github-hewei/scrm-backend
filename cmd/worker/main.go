@@ -5,7 +5,10 @@ import (
 	"zero-backend/internal/provider"
 	"zero-backend/internal/worker"
 
+	"github.com/241x/zero-kit/gormutil"
+	"github.com/241x/zero-kit/job"
 	"github.com/241x/zero-kit/mongodb"
+	"github.com/241x/zero-kit/mysql"
 	"github.com/241x/zero-kit/queue"
 	"github.com/241x/zero-kit/redis"
 )
@@ -19,9 +22,23 @@ func main() {
 	conn := mongodb.MustNewConn(provider.LoadMongoConfig())
 	log := provider.NewLogger(conn.DB, "worker.log")
 
+	gormLog := gormutil.NewLogger(log)
+	db := mysql.MustNewDB(provider.LoadMySQLConfig(), gormLog)
+
 	registry := worker.NewRegistry(log)
 	registry.Register("example", worker.NewExampleHandler(log))
 
+	// 作业执行器：企业微信数据同步（jobs 表由 SQLStore AutoMigrate 自动创建）
+	jobStore, err := job.NewSQLStore(db)
+	if err != nil {
+		log.Err(err, "Failed to create job store")
+		return
+	}
+	executor := job.NewExecutor(jobStore,
+		worker.NewWecomSyncJobHandler(provider.NewWecomSyncService(db, rdb), log),
+		job.DefaultConfig()).
+		WithLogger(log)
+
 	// 启动服务
-	worker.NewServer(manager, registry, log).Run()
+	worker.NewServer(manager, registry, log).AddExecutor(executor).Run()
 }

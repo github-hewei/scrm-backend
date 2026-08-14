@@ -16,6 +16,7 @@ import (
 	"zero-backend/internal/modules/wecom/contact"
 	"zero-backend/internal/modules/wecom/customer"
 	"zero-backend/internal/modules/wecom/group"
+	wecomsync "zero-backend/internal/modules/wecom/sync"
 	"zero-backend/internal/provider"
 
 	"github.com/241x/zero-kit/bind"
@@ -55,6 +56,7 @@ func NewGin(
 	memberRepo := contact.NewWecomMemberRepository(db)
 	customer.RegisterAdmin(protected, db, binder, memberRepo)
 	group.RegisterAdmin(protected, db, binder)
+	wecomsync.RegisterAdmin(protected, db, binder)
 	article.RegisterAdmin(protected, db, binder)
 	user.RegisterAdmin(protected, db, binder)
 	region.Register(protected, db, binder)

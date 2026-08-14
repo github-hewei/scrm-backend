@@ -2,43 +2,24 @@ package runner
 
 import (
 	"context"
-	"errors"
-	"fmt"
+
+	wecomsync "zero-backend/internal/modules/wecom/sync"
 
 	"github.com/241x/zero-kit/logger"
 )
 
-// Scope 同步范围
-type Scope string
-
-// 同步范围定义
-const (
-	ScopeAll     Scope = "all"     // 全部（通讯录+客户+客户群）
-	ScopeDept    Scope = "dept"    // 通讯录（部门+成员）
-	ScopeContact Scope = "contact" // 外部联系人（客户）
-	ScopeGroup   Scope = "group"   // 客户群
-)
-
-// ParseScope 解析同步范围参数，返回是否合法
-func ParseScope(s string) (Scope, error) {
-	switch Scope(s) {
-	case ScopeAll, ScopeDept, ScopeContact, ScopeGroup:
-		return Scope(s), nil
-	default:
-		return "", fmt.Errorf("无效的同步范围: %s (可选 all|dept|contact|group)", s)
-	}
-}
-
-// WecomSyncService 企微同步服务接口，由 wecom/sync 包实现
+// WecomSyncService 企微同步服务接口，由 wecom/sync 包实现。
 // runner 不直接依赖具体实现，便于后续调度器复用同一内核
 type WecomSyncService interface {
-	// ListActiveStoreIds 获取全部已接入企业ID列表
-	ListActiveStoreIds(ctx context.Context) ([]uint32, error)
+	// LoadStoreIds 加载待同步企业ID列表（storeId=0 时返回全部已接入企业）
+	LoadStoreIds(ctx context.Context, storeId uint32) ([]uint32, error)
 	// SyncStore 同步指定企业数据，scope 指定数据域
-	SyncStore(ctx context.Context, storeId uint32, scope Scope) error
+	SyncStore(ctx context.Context, storeId uint32, scope wecomsync.Scope) error
+	// SyncStores 批量同步企业：逐企业调用，每完成一个回调进度，聚合错误返回
+	SyncStores(ctx context.Context, storeIds []uint32, scope wecomsync.Scope, onProgress func(storeId uint32, completed, total int, err error)) error
 }
 
-// WecomSyncRunner 企微同步执行器：解析企业列表并逐企业调用同步服务
+// WecomSyncRunner 企微同步执行器：解析企业列表并调用同步服务
 type WecomSyncRunner struct {
 	log logger.Logger
 	svc WecomSyncService
@@ -49,14 +30,14 @@ func NewWecomSyncRunner(log logger.Logger, svc WecomSyncService) *WecomSyncRunne
 	return &WecomSyncRunner{log: log, svc: svc}
 }
 
-// Run 执行同步。storeId=0 时同步全部已接入企业
+// Run 执行同步。storeId=0 时同步全部已接入企业；任一企业失败返回聚合错误（退出码非0）
 func (r *WecomSyncRunner) Run(ctx context.Context, storeId uint32, scope string) error {
-	parsedScope, err := ParseScope(scope)
+	parsedScope, err := wecomsync.ParseScope(scope)
 	if err != nil {
 		return err
 	}
 
-	storeIds, err := r.loadStoreIds(ctx, storeId)
+	storeIds, err := r.svc.LoadStoreIds(ctx, storeId)
 	if err != nil {
 		return err
 	}
@@ -65,31 +46,11 @@ func (r *WecomSyncRunner) Run(ctx context.Context, storeId uint32, scope string)
 		return nil
 	}
 
-	errs := make([]error, 0, len(storeIds))
-	for _, sid := range storeIds {
-		r.log.Info("开始同步企业", "store_id", sid, "scope", parsedScope)
-		if err := r.svc.SyncStore(ctx, sid, parsedScope); err != nil {
-			r.log.Err(err, "同步企业失败", "store_id", sid)
-			errs = append(errs, fmt.Errorf("store_id=%d: %w", sid, err))
-			continue // 单个企业失败不阻断其它企业
-		}
-		r.log.Info("企业同步完成", "store_id", sid, "scope", parsedScope)
+	r.log.Info("开始同步企业", "count", len(storeIds), "scope", parsedScope)
+	if err := r.svc.SyncStores(ctx, storeIds, parsedScope, nil); err != nil {
+		r.log.Err(err, "同步失败")
+		return err
 	}
-	if len(errs) > 0 {
-		return fmt.Errorf("同步失败 %d/%d 个企业: %w", len(errs), len(storeIds), errors.Join(errs...))
-	}
+	r.log.Info("企业同步完成", "count", len(storeIds), "scope", parsedScope)
 	return nil
-}
-
-// loadStoreIds 加载待同步企业ID列表。
-// storeId 指定时只同步该企业；否则查询全部已接入(status=1)企业
-func (r *WecomSyncRunner) loadStoreIds(ctx context.Context, storeId uint32) ([]uint32, error) {
-	if storeId != 0 {
-		return []uint32{storeId}, nil
-	}
-	storeIds, err := r.svc.ListActiveStoreIds(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return storeIds, nil
 }

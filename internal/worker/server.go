@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/241x/zero-kit/job"
 	"github.com/241x/zero-kit/logger"
 	"github.com/241x/zero-kit/queue"
 )
@@ -15,10 +16,11 @@ const (
 	queueTestKey    = "test"
 )
 
-// Server 队列工作服务，管理队列消费和工作线程池。
+// Server 队列工作服务，管理队列消费、工作线程池与作业执行器。
 type Server struct {
-	manager *queue.QueueManager
-	logger  logger.Logger
+	manager   *queue.QueueManager
+	executors []*job.Executor
+	logger    logger.Logger
 }
 
 // NewServer 创建队列工作服务。
@@ -33,7 +35,13 @@ func NewServer(manager *queue.QueueManager, registry *Registry, log logger.Logge
 	return &Server{manager: manager, logger: log}
 }
 
-// Run 启动队列工作服务，阻塞直到收到退出信号。
+// AddExecutor 注册作业执行器，与队列工作池一并启停。
+func (s *Server) AddExecutor(ex *job.Executor) *Server {
+	s.executors = append(s.executors, ex)
+	return s
+}
+
+// Run 启动队列工作服务与作业执行器，阻塞直到收到退出信号。
 func (s *Server) Run() {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
@@ -45,6 +53,12 @@ func (s *Server) Run() {
 		s.logger.Err(err, "Failed to start worker pools")
 		return
 	}
+	for _, ex := range s.executors {
+		if err := ex.Start(ctx); err != nil {
+			s.logger.Err(err, "Failed to start job executor")
+			return
+		}
+	}
 
 	s.logger.Info("Worker started, waiting for tasks...")
 
@@ -53,6 +67,11 @@ func (s *Server) Run() {
 
 	if err := s.manager.StopAllWorkerPools(); err != nil {
 		s.logger.Err(err, "Failed to stop worker pools")
+	}
+	for _, ex := range s.executors {
+		if err := ex.Stop(); err != nil {
+			s.logger.Err(err, "Failed to stop job executor")
+		}
 	}
 
 	s.logger.Info("Worker stopped")

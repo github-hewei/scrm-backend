@@ -2,6 +2,7 @@ package sync
 
 import (
 	"context"
+	"errors"
 
 	"zero-backend/internal/modules/wecom/config"
 
@@ -53,7 +54,7 @@ func (m *ClientManager) resolveApp(ctx context.Context, storeId uint32) (*config
 	app, err := m.appRepo.FindOne(ctx, &config.WecomAppFilter{StoreId: storeId, AppType: int8(config.AppTypeSelfBuilt)},
 		baserepo.WithScopes(func(db *gorm.DB) *gorm.DB { return db.Order("id desc") }))
 	if err != nil {
-		if err == baserepo.ErrRecordNotFound {
+		if errors.Is(err, baserepo.ErrRecordNotFound) {
 			return nil, apperror.New(errcode.NotFound, apperror.WithMsgf("企业未配置自建应用 store_id=%d", storeId))
 		}
 		return nil, apperror.Wrap(errcode.Internal, err, apperror.WithMsgf("查询自建应用失败 store_id=%d", storeId))
