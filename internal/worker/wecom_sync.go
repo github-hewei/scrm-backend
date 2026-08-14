@@ -10,6 +10,7 @@ import (
 	"zero-backend/internal/modules/async"
 	wecomsync "zero-backend/internal/modules/wecom/sync"
 
+	"github.com/241x/zero-kit/gormutil"
 	"github.com/241x/zero-kit/job"
 	"github.com/241x/zero-kit/logger"
 )
@@ -35,11 +36,16 @@ func NewWecomSyncJobHandler(svc *wecomsync.Service, taskSvc *async.TaskService, 
 }
 
 // Execute 执行同步作业：解析 payload → 批量同步 → 同步任务状态/进度/结果。
+// 以 job_id 作为执行链路根：注入 gorm 日志上下文，应用日志统一带 job_id，串联 SDK/DB/日志。
 // 失败返回 error 后由执行器按 MaxAttempts 重试；同步本身幂等，重复执行安全
 func (h *WecomSyncJobHandler) Execute(ctx context.Context, j *job.Job) (retErr error) {
 	if j.Type != wecomsync.JobTypeWecomSync {
 		return fmt.Errorf("不支持的作业类型: %s", j.Type)
 	}
+
+	// 执行链路日志上下文：job_id 为链路根（应用日志 + DB 日志共用）
+	log := h.log.With("job_id", j.ID, "job_type", j.Type)
+	ctx = gormutil.WithTraceID(ctx, j.ID)
 
 	var req wecomsync.WecomSyncJobPayload
 	if err := json.Unmarshal(j.Payload, &req); err != nil {
@@ -53,7 +59,7 @@ func (h *WecomSyncJobHandler) Execute(ctx context.Context, j *job.Job) (retErr e
 	// 业务任务记录同步（记录不存在时静默忽略）
 	rec := async.NewRecorder(h.taskSvc, j.ID)
 	if err := rec.Start(ctx); err != nil {
-		h.log.Warn("同步任务启动记录失败", "job_id", j.ID, "error", err)
+		log.Warn("同步任务启动记录失败", "error", err)
 	}
 
 	start := time.Now()
@@ -75,7 +81,7 @@ func (h *WecomSyncJobHandler) Execute(ctx context.Context, j *job.Job) (retErr e
 		progress := completed * 100 / total
 		job.ReportProgress(ctx, progress)
 		if err := rec.Progress(ctx, progress); err != nil {
-			h.log.Warn("同步任务进度记录失败", "job_id", j.ID, "error", err)
+			log.Warn("同步任务进度记录失败", "store_id", storeId, "error", err)
 		}
 	}
 
@@ -84,7 +90,7 @@ func (h *WecomSyncJobHandler) Execute(ctx context.Context, j *job.Job) (retErr e
 	// 作业被取消（ctx 已关闭）时任务标记为 cancelled，与失败区分开
 	if errors.Is(retErr, context.Canceled) {
 		if err := rec.Cancel(ctx); err != nil {
-			h.log.Warn("同步任务取消记录失败", "job_id", j.ID, "error", err)
+			log.Warn("同步任务取消记录失败", "error", err)
 		}
 		return retErr
 	}
@@ -97,7 +103,7 @@ func (h *WecomSyncJobHandler) Execute(ctx context.Context, j *job.Job) (retErr e
 	})
 	j.Result = resultJSON
 	if err := rec.Finish(ctx, retErr, resultJSON); err != nil {
-		h.log.Warn("同步任务结果记录失败", "job_id", j.ID, "error", err)
+		log.Warn("同步任务结果记录失败", "error", err)
 	}
 	return retErr
 }
