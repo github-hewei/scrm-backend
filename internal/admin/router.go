@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"zero-backend/internal/modules/article"
+	"zero-backend/internal/modules/async"
 	"zero-backend/internal/modules/captcha"
 	"zero-backend/internal/modules/dashboard"
 	"zero-backend/internal/modules/health"
@@ -57,6 +58,7 @@ func NewGin(
 	customer.RegisterAdmin(protected, db, binder, memberRepo)
 	group.RegisterAdmin(protected, db, binder)
 	wecomsync.RegisterAdmin(protected, db, binder)
+	async.RegisterAdmin(protected, db, binder)
 	article.RegisterAdmin(protected, db, binder)
 	user.RegisterAdmin(protected, db, binder)
 	region.Register(protected, db, binder)

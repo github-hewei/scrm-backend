@@ -512,3 +512,29 @@ ADD KEY `idx_store_path` (`store_id`,`path`);
 -- 客户跟进表add_way枚举值含201/202，tinyint(-128~127)溢出，扩容为smallint
 ALTER TABLE `gaz_wecom_customer_follow`
 MODIFY COLUMN `add_way` smallint unsigned NOT NULL DEFAULT '0' COMMENT '添加方式(与企微add_way一致)';
+
+-- [CHECK POINT] --
+
+-- 通用异步任务表：业务侧异步任务记录（与系统级调度表jobs解耦，job_id单向关联）
+-- 用途：接口调用时不方便同步执行的异步任务（企业微信同步/邮件发送/数据导出等），
+--       供租户前端展示任务状态/进度/结果摘要，jobs表保持纯调度职责不对外暴露
+CREATE TABLE `gaz_async_task` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `store_id` int unsigned NOT NULL DEFAULT '0' COMMENT '企业ID(租户)，0=系统级任务',
+  `job_id` varchar(64) NOT NULL DEFAULT '' COMMENT '关联系统调度表jobs.id(1:1)',
+  `task_type` varchar(64) NOT NULL DEFAULT '' COMMENT '任务类型: wecom.sync/mail.send/export等',
+  `title` varchar(255) NOT NULL DEFAULT '' COMMENT '租户友好标题，如"同步企业微信客户群"',
+  `status` varchar(16) NOT NULL DEFAULT 'pending' COMMENT '任务状态: pending/running/success/failed/cancelled',
+  `progress` int NOT NULL DEFAULT '0' COMMENT '执行进度(0-100)',
+  `error` varchar(2000) NOT NULL DEFAULT '' COMMENT '最近一次错误信息',
+  `result` json DEFAULT NULL COMMENT '结果摘要(各类型自定义JSON，如同步群数/耗时)',
+  `created_at` int unsigned NOT NULL DEFAULT '0' COMMENT '创建时间',
+  `updated_at` int unsigned NOT NULL DEFAULT '0' COMMENT '更新时间',
+  `deleted_at` int unsigned NOT NULL DEFAULT '0' COMMENT '删除时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_job` (`job_id`),
+  KEY `idx_store_status` (`store_id`,`status`),
+  KEY `idx_store_type` (`store_id`,`task_type`),
+  KEY `idx_created` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通用异步任务记录表';
+

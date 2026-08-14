@@ -72,14 +72,15 @@ func (s *Service) SyncStore(ctx context.Context, storeId uint32, scope Scope) er
 		return apperror.Wrap(errcode.Internal, err, apperror.WithMsgf("构建企微客户端失败 store_id=%d", storeId))
 	}
 
+	// 未接入执行器的范围直接拒绝，避免静默退化（如 ScopeAll 只同步部分数据）
+	if !IsSupported(scope) {
+		return apperror.New(errcode.InvalidInput, apperror.WithMsgf("暂不支持同步范围: %s", scope))
+	}
+
 	switch scope {
 	case ScopeGroup:
 		return s.groupSvc.Sync(ctx, client, storeId)
-	case ScopeAll:
-		// TODO: 依次同步通讯录/客户/客户群
-		return s.groupSvc.Sync(ctx, client, storeId)
 	default:
-		// TODO: 通讯录/客户同步器接入后支持
-		return apperror.New(errcode.InvalidInput, apperror.WithMsgf("暂不支持同步范围: %s", scope))
+		return apperror.New(errcode.Internal, apperror.WithMsgf("同步范围未接入执行器: %s", scope))
 	}
 }

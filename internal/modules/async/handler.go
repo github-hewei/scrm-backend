@@ -1,4 +1,4 @@
-package sync
+package async
 
 import (
 	"github.com/241x/zero-kit/apperror"
@@ -9,14 +9,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Handler 同步作业处理器
+// Handler 异步任务处理器
 type Handler struct {
 	binder *bind.Binder
-	svc    *JobService
+	svc    *TaskService
 }
 
-// newHandler 创建同步作业处理器
-func newHandler(binder *bind.Binder, svc *JobService) *Handler {
+// newHandler 创建异步任务处理器
+func newHandler(binder *bind.Binder, svc *TaskService) *Handler {
 	return &Handler{binder: binder, svc: svc}
 }
 
@@ -30,9 +30,9 @@ func (h *Handler) requireStoreId(c *gin.Context) (uint32, bool) {
 	return storeId, true
 }
 
-// Submit 提交同步作业（仅限当前登录企业）
+// Submit 提交异步任务（仅当前登录企业，任务类型需已注册）
 func (h *Handler) Submit(c *gin.Context) {
-	req := &SubmitSyncRequest{}
+	req := &SubmitTaskRequest{}
 	if err := h.binder.ShouldBindJSON(c, req); err != nil {
 		response.Error(c, err)
 		return
@@ -41,17 +41,17 @@ func (h *Handler) Submit(c *gin.Context) {
 	if !ok {
 		return
 	}
-	jobID, err := h.svc.Submit(c.Request.Context(), storeId, req.Scope)
+	jobID, err := h.svc.Submit(c.Request.Context(), storeId, req.TaskType, req.Payload)
 	if err != nil {
 		response.Error(c, err)
 		return
 	}
-	response.Success(c, "请求成功", &SubmitSyncResponse{JobId: jobID})
+	response.Success(c, "请求成功", &SubmitTaskResponse{JobId: jobID})
 }
 
-// List 同步作业列表（仅当前登录企业）
+// List 任务列表（仅当前登录企业）
 func (h *Handler) List(c *gin.Context) {
-	req := &JobListRequest{}
+	req := &TaskListRequest{}
 	if err := h.binder.ShouldBindJSON(c, req); err != nil {
 		response.Error(c, err)
 		return
@@ -60,17 +60,17 @@ func (h *Handler) List(c *gin.Context) {
 	if !ok {
 		return
 	}
-	jobs, total, err := h.svc.List(c.Request.Context(), storeId, req.Page, req.Limit)
+	list, total, err := h.svc.ListByStore(c.Request.Context(), storeId, req.TaskType, req.Page, req.Limit)
 	if err != nil {
 		response.Error(c, err)
 		return
 	}
-	response.Success(c, "请求成功", &JobListResponse{List: fromJobs(jobs), Total: total})
+	response.Success(c, "请求成功", &TaskListResponse{List: fromTasks(list), Total: total})
 }
 
-// Detail 同步作业详情（仅当前登录企业）
+// Detail 任务详情（仅当前登录企业）
 func (h *Handler) Detail(c *gin.Context) {
-	req := &JobDetailRequest{}
+	req := &TaskDetailRequest{}
 	if err := h.binder.ShouldBindJSON(c, req); err != nil {
 		response.Error(c, err)
 		return
@@ -79,10 +79,10 @@ func (h *Handler) Detail(c *gin.Context) {
 	if !ok {
 		return
 	}
-	j, err := h.svc.Get(c.Request.Context(), storeId, req.JobId)
+	task, err := h.svc.GetByStore(c.Request.Context(), storeId, req.Id)
 	if err != nil {
 		response.Error(c, err)
 		return
 	}
-	response.Success(c, "请求成功", fromJob(j))
+	response.Success(c, "请求成功", fromTask(task))
 }

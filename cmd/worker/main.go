@@ -2,6 +2,7 @@ package main
 
 import (
 	"zero-backend/internal/config"
+	"zero-backend/internal/modules/async"
 	"zero-backend/internal/provider"
 	"zero-backend/internal/worker"
 
@@ -34,8 +35,9 @@ func main() {
 		log.Err(err, "Failed to create job store")
 		return
 	}
+	taskSvc := async.NewTaskService(async.NewAsyncTaskRepository(db), jobStore)
 	executor := job.NewExecutor(jobStore,
-		worker.NewWecomSyncJobHandler(provider.NewWecomSyncService(db, rdb), log),
+		worker.NewWecomSyncJobHandler(provider.NewWecomSyncService(db, rdb), taskSvc, log),
 		job.DefaultConfig()).
 		WithLogger(log)
 

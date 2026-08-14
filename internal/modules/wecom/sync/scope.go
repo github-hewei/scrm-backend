@@ -22,3 +22,11 @@ func ParseScope(s string) (Scope, error) {
 		return "", fmt.Errorf("无效的同步范围: %s (可选 all|dept|contact|group)", s)
 	}
 }
+
+// supportedScopes 当前已接入执行器的同步范围（通讯录/客户同步器接入后在此登记）
+var supportedScopes = map[Scope]bool{ScopeGroup: true}
+
+// IsSupported 判断同步范围是否已接入执行器，供提交校验与执行层共用
+func IsSupported(scope Scope) bool {
+	return supportedScopes[scope]
+}
