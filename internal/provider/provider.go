@@ -5,6 +5,7 @@ import (
 	"zero-backend/internal/modules/captcha"
 	"zero-backend/internal/modules/setting"
 	wecomconfig "zero-backend/internal/modules/wecom/config"
+	"zero-backend/internal/modules/wecom/contact"
 	"zero-backend/internal/modules/wecom/customer"
 	"zero-backend/internal/modules/wecom/group"
 	wecomsync "zero-backend/internal/modules/wecom/sync"
@@ -110,7 +111,12 @@ func NewWecomSyncService(db *gorm.DB, rdb *goredis.Client) *wecomsync.Service {
 	configRepo := wecomconfig.NewWecomConfigRepository(db)
 	appRepo := wecomconfig.NewWecomAppRepository(db)
 	clientMgr := wecomsync.NewClientManager(configRepo, appRepo, wecom.NewRedisCache(rdb))
+	contactSyncer := contact.NewContactSyncer(
+		contact.NewWecomDepartmentRepository(db),
+		contact.NewWecomMemberRepository(db),
+		contact.NewWecomMemberDepartmentRepository(db),
+	)
 	groupSyncer := group.NewGroupSyncer(group.NewWecomGroupRepository(db), group.NewWecomGroupMemberRepository(db))
 	customerSyncer := customer.NewCustomerSyncer(customer.NewWecomCustomerRepository(db), customer.NewWecomCustomerFollowRepository(db))
-	return wecomsync.NewService(configRepo, clientMgr, groupSyncer, customerSyncer)
+	return wecomsync.NewService(configRepo, clientMgr, contactSyncer, groupSyncer, customerSyncer)
 }

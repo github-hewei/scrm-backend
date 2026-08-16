@@ -2,6 +2,7 @@ package customer
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/241x/zero-kit/apperror"
@@ -13,6 +14,8 @@ import (
 const (
 	followUserBatchSize = 100
 	batchLimit          = 1000
+	// maxBatchPages 单批翻页上限，防御游标异常死循环（1000页×1000≈100万客户，正常场景远达不到）
+	maxBatchPages = 1000
 )
 
 // customerAggregate 客户聚合结果：主数据 + 全部跟进人（多成员视角合并）
@@ -71,7 +74,7 @@ func (s *CustomerSyncer) Sync(ctx context.Context, client *wecom.Client, storeId
 // fetchBatch 批量拉取一批成员的全部客户信息并聚合（内部翻页）
 func (s *CustomerSyncer) fetchBatch(ctx context.Context, client *wecom.Client, userIds []string, aggregated map[string]*customerAggregate) error {
 	cursor := ""
-	for {
+	for page := 0; page < maxBatchPages; page++ {
 		resp, err := client.ExternalContact.BatchGetContacts(ctx, userIds, cursor, batchLimit)
 		if err != nil {
 			return apperror.Wrap(errcode.Internal, err, apperror.WithMsgf("批量拉取客户失败 user_ids=%v", userIds))
@@ -117,6 +120,7 @@ func (s *CustomerSyncer) fetchBatch(ctx context.Context, client *wecom.Client, u
 		}
 		cursor = resp.NextCursor
 	}
+	return apperror.Wrap(errcode.Internal, fmt.Errorf("批量拉取客户分页超限 user_ids=%v", userIds))
 }
 
 // upsertAll 批量差异写：一次读现有客户/跟进人，分桶后批量插入、按主键更新、软删移除

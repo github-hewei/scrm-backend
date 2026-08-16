@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"zero-backend/internal/modules/wecom/config"
+	"zero-backend/internal/modules/wecom/contact"
 	"zero-backend/internal/modules/wecom/customer"
 	"zero-backend/internal/modules/wecom/group"
 
@@ -17,13 +18,14 @@ import (
 type Service struct {
 	configRepo  *config.WecomConfigRepository
 	clientMgr   *ClientManager
+	contactSvc  *contact.ContactSyncer
 	groupSvc    *group.GroupSyncer
 	customerSvc *customer.CustomerSyncer
 }
 
 // NewService 创建同步服务
-func NewService(configRepo *config.WecomConfigRepository, clientMgr *ClientManager, groupSvc *group.GroupSyncer, customerSvc *customer.CustomerSyncer) *Service {
-	return &Service{configRepo: configRepo, clientMgr: clientMgr, groupSvc: groupSvc, customerSvc: customerSvc}
+func NewService(configRepo *config.WecomConfigRepository, clientMgr *ClientManager, contactSvc *contact.ContactSyncer, groupSvc *group.GroupSyncer, customerSvc *customer.CustomerSyncer) *Service {
+	return &Service{configRepo: configRepo, clientMgr: clientMgr, contactSvc: contactSvc, groupSvc: groupSvc, customerSvc: customerSvc}
 }
 
 // ListActiveStoreIds 获取全部已接入企业ID列表（wecom_config.status=1）
@@ -80,10 +82,21 @@ func (s *Service) SyncStore(ctx context.Context, storeId uint32, scope Scope) er
 	}
 
 	switch scope {
-	case ScopeGroup:
+	case ScopeAll:
+		// 依次同步：通讯录 → 客户 → 客户群（任一失败即中断，下次重跑幂等自愈）
+		if err := s.contactSvc.Sync(ctx, client, storeId); err != nil {
+			return err
+		}
+		if err := s.customerSvc.Sync(ctx, client, storeId); err != nil {
+			return err
+		}
 		return s.groupSvc.Sync(ctx, client, storeId)
+	case ScopeDept:
+		return s.contactSvc.Sync(ctx, client, storeId)
 	case ScopeContact:
 		return s.customerSvc.Sync(ctx, client, storeId)
+	case ScopeGroup:
+		return s.groupSvc.Sync(ctx, client, storeId)
 	default:
 		return apperror.New(errcode.Internal, apperror.WithMsgf("同步范围未接入执行器: %s", scope))
 	}

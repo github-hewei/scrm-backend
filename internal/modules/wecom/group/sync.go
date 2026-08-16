@@ -2,6 +2,7 @@ package group
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/241x/zero-kit/apperror"
 	"github.com/241x/zero-kit/baserepo"
@@ -23,9 +24,11 @@ func NewGroupSyncer(groupRepo *WecomGroupRepository, groupMemberRepo *WecomGroup
 // Sync 全量同步客户群。策略：分页拉取群列表，逐个拉详情并 upsert 群与成员；
 // 全部分页拉取成功后，清理企微已不返回（解散）的本地群及其成员
 func (s *GroupSyncer) Sync(ctx context.Context, client *wecom.Client, storeId uint32) error {
+	const maxPages = 100000 // 防御：游标异常时避免死循环（10万页×100≈千万群，正常场景远达不到）
 	cursor := ""
 	seen := make(map[string]struct{})
-	for {
+	page := 0
+	for ; page < maxPages; page++ {
 		listResp, err := client.ExternalContact.GetGroupChatList(ctx, 0, 100, nil, cursor)
 		if err != nil {
 			return apperror.Wrap(errcode.Internal, err, apperror.WithMsgf("拉取客户群列表失败 store_id=%d", storeId))
@@ -40,6 +43,9 @@ func (s *GroupSyncer) Sync(ctx context.Context, client *wecom.Client, storeId ui
 			break
 		}
 		cursor = listResp.NextCursor
+	}
+	if page == maxPages {
+		return apperror.Wrap(errcode.Internal, fmt.Errorf("拉取客户群列表分页超限 store_id=%d", storeId))
 	}
 	return s.cleanupDisbanded(ctx, storeId, seen)
 }
