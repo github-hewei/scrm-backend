@@ -12,7 +12,7 @@ type SubmitTaskRequest struct {
 
 // SubmitTaskResponse 提交异步任务响应
 type SubmitTaskResponse struct {
-	JobId string `json:"job_id"`
+	TaskId uint64 `json:"task_id"`
 }
 
 // TaskListRequest 任务列表请求

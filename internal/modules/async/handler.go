@@ -41,12 +41,12 @@ func (h *Handler) Submit(c *gin.Context) {
 	if !ok {
 		return
 	}
-	jobID, err := h.svc.Submit(c.Request.Context(), storeId, req.TaskType, req.Payload)
+	taskID, err := h.svc.Submit(c.Request.Context(), storeId, req.TaskType, req.Payload)
 	if err != nil {
 		response.Error(c, err)
 		return
 	}
-	response.Success(c, "请求成功", &SubmitTaskResponse{JobId: jobID})
+	response.Success(c, "请求成功", &SubmitTaskResponse{TaskId: taskID})
 }
 
 // List 任务列表（仅当前登录企业）

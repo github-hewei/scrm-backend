@@ -25,18 +25,19 @@ func NewTaskService(repo *AsyncTaskRepository, store *job.SQLStore) *TaskService
 }
 
 // Submit 提交异步任务：按 task_type 查注册规则 → 业务校验 → 连点去重 →
-// 创建系统调度作业并登记任务记录，返回作业ID。提交成功后由 worker 进程异步执行
-func (s *TaskService) Submit(ctx context.Context, storeId uint32, taskType string, payload []byte) (string, error) {
+// 创建系统调度作业并登记任务记录，返回任务ID（租户业务主键，用于详情/列表查询）。
+// 提交成功后由 worker 进程异步执行
+func (s *TaskService) Submit(ctx context.Context, storeId uint32, taskType string, payload []byte) (uint64, error) {
 	rule, ok := lookupSubmitHandler(taskType)
 	if !ok {
-		return "", apperror.New(errcode.InvalidInput, apperror.WithMsgf("不支持的任务类型: %s", taskType))
+		return 0, apperror.New(errcode.InvalidInput, apperror.WithMsgf("不支持的任务类型: %s", taskType))
 	}
 	if storeId == 0 {
-		return "", apperror.New(errcode.InvalidInput, apperror.WithMsg("企业标识缺失"))
+		return 0, apperror.New(errcode.InvalidInput, apperror.WithMsg("企业标识缺失"))
 	}
 	if rule.Validate != nil {
 		if err := rule.Validate(ctx, storeId, payload); err != nil {
-			return "", err
+			return 0, err
 		}
 	}
 
@@ -47,14 +48,14 @@ func (s *TaskService) Submit(ctx context.Context, storeId uint32, taskType strin
 		if key != "" {
 			existing, err := s.store.List(ctx, job.JobFilter{Queue: job.DefaultQueue, Type: taskType, Limit: 100})
 			if err != nil {
-				return "", apperror.Wrap(errcode.Internal, err, apperror.WithMsg("查询进行中作业失败"))
+				return 0, apperror.Wrap(errcode.Internal, err, apperror.WithMsg("查询进行中作业失败"))
 			}
 			for _, j := range existing {
 				if j.Status != job.StatusPending && j.Status != job.StatusRunning {
 					continue
 				}
 				if rule.DedupKey(j.Payload) == key {
-					return "", apperror.New(errcode.Conflict, apperror.WithMsgf("已有相同任务在执行 job_id=%s", j.ID))
+					return 0, apperror.New(errcode.Conflict, apperror.WithMsgf("已有相同任务在执行 job_id=%s", j.ID))
 				}
 			}
 		}
@@ -70,25 +71,26 @@ func (s *TaskService) Submit(ctx context.Context, storeId uint32, taskType strin
 	}
 	j := job.NewJob(taskType, payload).WithMaxAttempts(maxAttempts)
 	if err := s.store.Save(ctx, j); err != nil {
-		return "", apperror.Wrap(errcode.Internal, err, apperror.WithMsg("提交任务失败"))
+		return 0, apperror.Wrap(errcode.Internal, err, apperror.WithMsg("提交任务失败"))
 	}
-	if err := s.Create(ctx, storeId, j.ID, taskType, title); err != nil {
+	task, err := s.Create(ctx, storeId, j.ID, taskType, title)
+	if err != nil {
 		// 登记失败时回滚已入队作业，避免"作业已调度但无任务记录"的不一致
 		if delErr := s.store.Delete(ctx, j.ID); delErr != nil {
 			err = errors.Join(err, fmt.Errorf("回滚作业失败: %w", delErr))
 		}
-		return "", apperror.Wrap(errcode.Internal, err, apperror.WithMsg("登记任务记录失败"))
+		return 0, apperror.Wrap(errcode.Internal, err, apperror.WithMsg("登记任务记录失败"))
 	}
-	return j.ID, nil
+	return task.ID, nil
 }
 
-// Create 创建任务记录（提交异步作业后调用，与 jobs 表 1:1 关联）
-func (s *TaskService) Create(ctx context.Context, storeId uint32, jobId, taskType, title string) error {
+// Create 创建任务记录（提交异步作业后调用，与 jobs 表 1:1 关联），返回创建的任务
+func (s *TaskService) Create(ctx context.Context, storeId uint32, jobId, taskType, title string) (*AsyncTask, error) {
 	if jobId == "" || taskType == "" {
-		return errors.New("async: job_id and task_type are required")
+		return nil, errors.New("async: job_id and task_type are required")
 	}
 	now := uint32(time.Now().Unix())
-	return s.repo.Create(ctx, &AsyncTask{
+	task := &AsyncTask{
 		StoreId:   storeId,
 		JobId:     jobId,
 		TaskType:  taskType,
@@ -96,7 +98,11 @@ func (s *TaskService) Create(ctx context.Context, storeId uint32, jobId, taskTyp
 		Status:    TaskStatusPending,
 		CreatedAt: now,
 		UpdatedAt: now,
-	})
+	}
+	if err := s.repo.Create(ctx, task); err != nil {
+		return nil, err
+	}
+	return task, nil
 }
 
 // markRunning 按已加载任务标记执行中

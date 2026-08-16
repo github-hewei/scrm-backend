@@ -47,6 +47,10 @@ func (s *GroupSyncer) Sync(ctx context.Context, client *wecom.Client, storeId ui
 	if page == maxPages {
 		return apperror.Wrap(errcode.Internal, fmt.Errorf("拉取客户群列表分页超限 store_id=%d", storeId))
 	}
+	if len(seen) == 0 {
+		// 拉取源为空（企微异常/未返回任何群）时不执行清理，避免误删本地已有客户群
+		return nil
+	}
 	return s.cleanupDisbanded(ctx, storeId, seen)
 }
 
