@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"zero-backend/internal/modules/wecom/config"
+	"zero-backend/internal/modules/wecom/customer"
 	"zero-backend/internal/modules/wecom/group"
 
 	"github.com/241x/zero-kit/apperror"
@@ -14,14 +15,15 @@ import (
 
 // Service 企微数据同步服务：编排各子包同步器
 type Service struct {
-	configRepo *config.WecomConfigRepository
-	clientMgr  *ClientManager
-	groupSvc   *group.GroupSyncer
+	configRepo  *config.WecomConfigRepository
+	clientMgr   *ClientManager
+	groupSvc    *group.GroupSyncer
+	customerSvc *customer.CustomerSyncer
 }
 
 // NewService 创建同步服务
-func NewService(configRepo *config.WecomConfigRepository, clientMgr *ClientManager, groupSvc *group.GroupSyncer) *Service {
-	return &Service{configRepo: configRepo, clientMgr: clientMgr, groupSvc: groupSvc}
+func NewService(configRepo *config.WecomConfigRepository, clientMgr *ClientManager, groupSvc *group.GroupSyncer, customerSvc *customer.CustomerSyncer) *Service {
+	return &Service{configRepo: configRepo, clientMgr: clientMgr, groupSvc: groupSvc, customerSvc: customerSvc}
 }
 
 // ListActiveStoreIds 获取全部已接入企业ID列表（wecom_config.status=1）
@@ -80,6 +82,8 @@ func (s *Service) SyncStore(ctx context.Context, storeId uint32, scope Scope) er
 	switch scope {
 	case ScopeGroup:
 		return s.groupSvc.Sync(ctx, client, storeId)
+	case ScopeContact:
+		return s.customerSvc.Sync(ctx, client, storeId)
 	default:
 		return apperror.New(errcode.Internal, apperror.WithMsgf("同步范围未接入执行器: %s", scope))
 	}
