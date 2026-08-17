@@ -107,10 +107,10 @@ func MustNewCaptchaService(rdb *goredis.Client, cfg captcha.Config) *captcha.Ser
 }
 
 // NewWecomSyncService 组装企微数据同步服务（CLI/worker/web 共用同一内核）
-func NewWecomSyncService(db *gorm.DB, rdb *goredis.Client) *wecomsync.Service {
+func NewWecomSyncService(db *gorm.DB, rdb *goredis.Client, log logger.Logger) *wecomsync.Service {
 	configRepo := wecomconfig.NewWecomConfigRepository(db)
 	appRepo := wecomconfig.NewWecomAppRepository(db)
-	clientMgr := wecomsync.NewClientManager(configRepo, appRepo, wecom.NewRedisCache(rdb))
+	clientMgr := wecomsync.NewClientManager(configRepo, appRepo, wecom.NewRedisCache(rdb), log)
 	contactSyncer := contact.NewContactSyncer(
 		contact.NewWecomDepartmentRepository(db),
 		contact.NewWecomMemberRepository(db),

@@ -37,7 +37,7 @@ func main() {
 	}
 	taskSvc := async.NewTaskService(async.NewAsyncTaskRepository(db), jobStore)
 	executor := job.NewExecutor(jobStore,
-		worker.NewWecomSyncJobHandler(provider.NewWecomSyncService(db, rdb), taskSvc, log),
+		worker.NewWecomSyncJobHandler(provider.NewWecomSyncService(db, rdb, log), taskSvc, log),
 		job.DefaultConfig()).
 		WithLogger(log)
 

@@ -79,6 +79,11 @@ func (h *WecomSyncJobHandler) Execute(ctx context.Context, j *job.Job) (retErr e
 		}
 		results = append(results, result)
 		progress := completed * 100 / total
+		if syncErr != nil {
+			log.Warn("企业同步失败", "store_id", storeId, "scope", req.Scope, "progress", progress, "error", syncErr)
+		} else {
+			log.Info("企业同步完成", "store_id", storeId, "scope", req.Scope, "progress", progress)
+		}
 		job.ReportProgress(ctx, progress)
 		if err := rec.Progress(ctx, progress); err != nil {
 			log.Warn("同步任务进度记录失败", "store_id", storeId, "error", err)

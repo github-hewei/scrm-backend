@@ -31,6 +31,6 @@ func main() {
 	app.AddCommand(cli.MigrateCmd(db, log))
 	app.AddCommand(cli.QueueCmd(queue.NewQueueManager(rdb)))
 	app.AddCommand(cli.SyncApiCmd(runner.NewSyncApiRunner(log, rbac.NewRbacApiRepository(db))))
-	app.AddCommand(cli.WecomSyncCmd(log, provider.NewWecomSyncService(db, rdb)))
+	app.AddCommand(cli.WecomSyncCmd(log, provider.NewWecomSyncService(db, rdb, log)))
 	os.Exit(app.Run())
 }

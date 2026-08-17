@@ -8,6 +8,7 @@ import (
 
 	"github.com/241x/zero-kit/apperror"
 	"github.com/241x/zero-kit/baserepo"
+	"github.com/241x/zero-kit/logger"
 	"github.com/241x/zero-third/wecom"
 	"github.com/241x/zero-web/errcode"
 	"gorm.io/gorm"
@@ -18,11 +19,12 @@ type ClientManager struct {
 	configRepo *config.WecomConfigRepository
 	appRepo    *config.WecomAppRepository
 	cache      wecom.TokenCache
+	log        logger.Logger
 }
 
 // NewClientManager 创建客户端管理器
-func NewClientManager(configRepo *config.WecomConfigRepository, appRepo *config.WecomAppRepository, cache wecom.TokenCache) *ClientManager {
-	return &ClientManager{configRepo: configRepo, appRepo: appRepo, cache: cache}
+func NewClientManager(configRepo *config.WecomConfigRepository, appRepo *config.WecomAppRepository, cache wecom.TokenCache, log logger.Logger) *ClientManager {
+	return &ClientManager{configRepo: configRepo, appRepo: appRepo, cache: cache, log: log}
 }
 
 // Get 获取企业的SDK客户端。使用最新配置的自建应用凭据（权限全开覆盖全部数据域）。
@@ -41,6 +43,10 @@ func (m *ClientManager) Get(ctx context.Context, storeId uint32) (*wecom.Client,
 	opts := []wecom.ClientOption{}
 	if wecomConfig.ApiBaseUrl != "" {
 		opts = append(opts, wecom.WithBaseURL(wecomConfig.ApiBaseUrl))
+	}
+	if m.log != nil {
+		// 注入日志组件，SDK 请求/响应调试日志（Debug 级别）随应用日志输出
+		opts = append(opts, wecom.WithLogger(m.log))
 	}
 	client, err := wecom.NewClient(wecom.CorpSecret{CorpID: wecomConfig.CorpId, Secret: app.Secret}, 0, m.cache, opts...)
 	if err != nil {
